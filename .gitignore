@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+coverage/
+*.tsbuildinfo
+
+# Logs
+*.log
+.pnpm-debug.log*
+
+# OS
+.DS_Store
+
+# Local corpus (NEVER commit real JSONL corpora — see spec §6)
+/corpus/
+*.local.jsonl
+
+# Superpowers working artifacts (local only)
+docs/superpowers/
