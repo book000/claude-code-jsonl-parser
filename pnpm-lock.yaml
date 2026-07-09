@@ -44,6 +44,15 @@ importers:
 
   packages/parser: {}
 
+  packages/validator:
+    dependencies:
+      claude-code-jsonl-generator:
+        specifier: workspace:*
+        version: link:../generator
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+
 packages:
 
   '@babel/generator@8.0.0':

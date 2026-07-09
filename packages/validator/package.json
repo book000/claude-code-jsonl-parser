@@ -1,0 +1,36 @@
+{
+  "name": "claude-code-jsonl-validator",
+  "version": "0.0.0",
+  "description": "Regression-check real Claude Code JSONL corpora against known schemas",
+  "keywords": ["claude-code", "jsonl", "validation"],
+  "license": "MIT",
+  "author": "Tomachi <tomachi@tomacheese.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/book000/claude-code-jsonl-parser.git",
+    "directory": "packages/validator"
+  },
+  "type": "module",
+  "files": ["dist"],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "claude-code-jsonl-validator": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+      "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" }
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "clean": "rimraf dist",
+    "lint": "tsc -p tsconfig.test.json"
+  },
+  "dependencies": {
+    "claude-code-jsonl-generator": "workspace:*",
+    "zod": "4.4.3"
+  }
+}
