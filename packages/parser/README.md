@@ -2,18 +2,21 @@
 
 Claude Code の JSONL 会話ログ (`~/.claude/projects/**/*.jsonl` など) を型安全にパースする、依存ゼロの TypeScript ライブラリ。
 
-- 依存パッケージなし (実行時 dependencies は空)
-- ESM / CJS 両対応
-- 1 行ずつのパース結果を `known` / `unknown` / `error` の 3 値で判別 (例外を投げない)
-- ファイル全体を一括で読む API と、定数メモリで逐次処理するストリーミング API の両方を提供
+## ✨ Features
 
-## インストール
+- **依存ゼロ** — 実行時 dependencies なし
+- **例外を投げない** — 1 行ずつのパース結果を `known` / `unknown` / `error` の 3 値で判別
+- **ESM + CJS 両対応** — Node.js の ESM/CJS どちらからも利用可能
+- **診断可能な `unknown`** — 既知 type だが形状不一致の行は `typeHint`/`reason` 付きで表現され、データを失わない
+- **一括 API とストリーミング API** — ファイル全体を一括で読む API と、定数メモリで逐次処理する API の両方を提供
+
+## 📦 インストール
 
 ```bash
 npm install claude-code-jsonl-parser
 ```
 
-## クイックスタート
+## 🚀 クイックスタート
 
 ```ts
 import { parseJsonlFile } from 'claude-code-jsonl-parser'
@@ -32,7 +35,9 @@ if (result.isOk) {
 JSON 構文エラーや未知の形状の行は例外にはならず、各行の `ParsedLine` 自体が
 `_kind: 'error'` / `_kind: 'unknown'` として表現される (後述)。
 
-## 一括 API とストリーミング API
+## 📖 API
+
+### 一括 API とストリーミング API
 
 | 関数 | 用途 |
 | --- | --- |
@@ -54,7 +59,7 @@ for await (const line of parseJsonlFileStream('/path/to/large-session.jsonl')) {
 }
 ```
 
-## ParsedLine の 3 値判別
+### ParsedLine の 3 値判別
 
 行ごとのパース結果は `_kind` で判別する。
 
@@ -85,7 +90,7 @@ function handle(line: ParsedLine) {
 `unknown` (`typeHint` に元の type、`reason` に不一致理由) として表現される。
 例外は投げない。
 
-## content ブロックの絞り込み
+### content ブロックの絞り込み
 
 `assistant`/`user` の `message.content` 配列の要素 (`AssistantContentBlock` /
 `UserContentBlock`) も、既知ブロックと `UnknownContentBlock` の判別 union になっている。
@@ -102,7 +107,7 @@ function describe(block: AssistantContentBlock): string {
 }
 ```
 
-## 公開されている型ガード (上級者向け)
+### 公開されている型ガード (上級者向け)
 
 `guards` / `guardByType` / `KNOWN_TYPES` / `normalizeAssistantContent` /
 `normalizeUserContent` は、独自のパースパイプラインを組みたい場合のために
@@ -117,6 +122,6 @@ const result = guardByType('assistant', someRawObject)
 // result.ok === false, result.reason → 形状不一致とその理由
 ```
 
-## ライセンス
+## 📑 ライセンス
 
-MIT
+このプロジェクトは [MIT License](./LICENSE) の下で公開されている。
