@@ -1,0 +1,35 @@
+{
+  "name": "claude-code-jsonl-generator",
+  "version": "0.0.0",
+  "description": "Infer and generate types/schemas/guards from real Claude Code JSONL corpora",
+  "keywords": ["claude-code", "jsonl", "codegen", "zod"],
+  "license": "MIT",
+  "author": "Tomachi <tomachi@tomacheese.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/book000/claude-code-jsonl-parser.git",
+    "directory": "packages/generator"
+  },
+  "type": "module",
+  "files": ["dist"],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "claude-code-jsonl-generator": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+      "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" }
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "clean": "rimraf dist",
+    "lint": "tsc -p tsconfig.test.json"
+  },
+  "dependencies": {
+    "zod": "4.4.3"
+  }
+}
