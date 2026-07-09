@@ -54,4 +54,4 @@ for (const [type, samples] of scan.samplesByType) {
 
 ## 📑 ライセンス
 
-このプロジェクトは [MIT License](../../LICENSE) の下で公開されている。
+このプロジェクトは [MIT License](./LICENSE) の下で公開されている。
