@@ -28,7 +28,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown && node ../../scripts/check-dts-no-zod.mjs",
     "clean": "rimraf dist",
     "lint": "tsc -p tsconfig.test.json"
   }
