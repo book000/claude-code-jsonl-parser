@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, it, expect } from 'vitest'
 import { validateLine, aggregateReport, hasFindings } from '../src/validate'
 
@@ -48,4 +51,16 @@ describe('aggregateReport / hasFindings', () => {
     expect(hasFindings(new Map())).toBe(false)
     expect(hasFindings(new Map([['mode', [{ type: 'mode', kind: 'no-type', message: 'm' }]]]))).toBe(true)
   })
+})
+
+it('regressions.jsonl から全 finding 種別を検出する', () => {
+  const path = join(fileURLToPath(new URL('.', import.meta.url)), 'fixtures', 'regressions.jsonl')
+  const findings = readFileSync(path, 'utf8')
+    .split('\n')
+    .filter((l) => l.trim() !== '')
+    .flatMap((l) => validateLine(JSON.parse(l)))
+  const kinds = new Set(findings.map((f) => f.kind))
+  expect(kinds.has('unknown-type')).toBe(true)
+  expect(kinds.has('unknown-field')).toBe(true)
+  expect(kinds.has('schema-mismatch')).toBe(true)
 })
