@@ -7,7 +7,8 @@ import { fileReadError, type FileReadError } from './errors'
 
 /**
  * JSONL 文字列を行単位で逐次パースする同期イテレータ。
- * 大きな文字列でも 1 行分の中間メモリで済む。
+ * `text.split('\n')` で全行配列を作らず、`indexOf` で 1 行ずつ切り出すため、
+ * 追加メモリは 1 行分にとどまる (全行配列分の追加確保が発生しない)。
  *
  * 空行 (トリム後に空) はスキップし、行番号カウントには含めない。
  *
@@ -15,12 +16,19 @@ import { fileReadError, type FileReadError } from './errors'
  */
 export function* parseJsonlLines(text: string): Iterable<ParsedLine> {
   let lineNumber = 0
-  for (const raw of text.split('\n')) {
+  let start = 0
+  while (start <= text.length) {
+    const nlIndex = text.indexOf('\n', start)
+    const end = nlIndex === -1 ? text.length : nlIndex
     // CRLF の \r を除去
-    const line = raw.endsWith('\r') ? raw.slice(0, -1) : raw
-    if (line.trim() === '') continue
-    lineNumber += 1
-    yield parseLine(line, lineNumber)
+    const rawEnd = end > start && text[end - 1] === '\r' ? end - 1 : end
+    const line = text.slice(start, rawEnd)
+    if (line.trim() !== '') {
+      lineNumber += 1
+      yield parseLine(line, lineNumber)
+    }
+    if (nlIndex === -1) break
+    start = end + 1
   }
 }
 

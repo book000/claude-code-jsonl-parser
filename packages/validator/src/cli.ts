@@ -43,7 +43,7 @@ async function main(): Promise<void> {
   }
 
   const report = aggregateReport(findings)
-  for (const [type, bucket] of [...report].toSorted()) {
+  for (const [type, bucket] of [...report].toSorted(([a], [b]) => a.localeCompare(b))) {
     console.log(`\n[${type}] ${bucket.length} finding(s)`)
     const byKind = new Map<string, number>()
     for (const f of bucket) byKind.set(f.kind, (byKind.get(f.kind) ?? 0) + 1)

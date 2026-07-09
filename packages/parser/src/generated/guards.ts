@@ -1,8 +1,10 @@
 /**
- * このファイルは claude-code-jsonl-generator により生成される。
- * zod 非依存の純粋な型ガード。トップレベル必須フィールドの最小検査のみ行う。
+ * Claude Code JSONL の各エントリ型に対する zod 非依存の純粋な型ガード。
+ * トップレベル必須フィールドの最小検査のみ行う。
  *
- * (初回は手書きシード)
+ * claude-code-jsonl-generator でコーパスから再生成できるが、
+ * content-block guards は手動でキュレーションしているため、
+ * 生成結果をそのまま上書きするのではなく差分を確認して反映すること。
  */
 import type {
   AssistantEntry, UserEntry, AttachmentEntry, SystemEntry, ModeEntry,

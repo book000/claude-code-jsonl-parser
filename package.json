@@ -12,7 +12,8 @@
     "clean": "pnpm -r clean",
     "test": "vitest run",
     "lint": "pnpm -r lint && eslint .",
-    "fix": "pnpm -r fix && eslint . --fix"
+    "fix": "pnpm -r fix && eslint . --fix",
+    "check:generated-sync": "node scripts/check-generated-sync.mjs"
   },
   "devDependencies": {
     "@book000/eslint-config": "1.15.4",

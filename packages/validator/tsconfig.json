@@ -1,5 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "rootDir": "./src", "outDir": "./dist" },
+  "compilerOptions": { "composite": true, "rootDir": "./src", "outDir": "./dist" },
+  "references": [{ "path": "../generator" }],
   "include": ["src/**/*"]
 }

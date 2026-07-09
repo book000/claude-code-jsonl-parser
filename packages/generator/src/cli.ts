@@ -64,7 +64,7 @@ async function main(): Promise<void> {
   await writeFile(path.join(out,'types.generated.ts'), typesOut, 'utf8')
   await writeFile(path.join(out,'guards.generated.ts'), guardsOut, 'utf8')
   console.error(`written: ${path.join(out,'types.generated.ts')}, ${path.join(out,'guards.generated.ts')}`)
-  console.error('NOTE: review the diff before committing. content-block guards / message shapes are curated manually (see plan Task 06/08).')
+  console.error('NOTE: review the diff before committing. content-block guards / message shapes are curated manually and are not overwritten by this generator.')
 }
 
 main().catch((error: unknown) => {
