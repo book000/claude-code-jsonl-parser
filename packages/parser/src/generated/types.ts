@@ -59,6 +59,13 @@ export interface AssistantEntry extends EntryBase {
   attributionMcpTool?: string
 }
 
+/** `user.origin` — 発生元の種別と付随情報。 */
+export interface UserOrigin {
+  kind: string
+  from?: string
+  senderTaskId?: string
+}
+
 /** `type: "user"` — ユーザ入力 / ツール結果を内包。 */
 export interface UserEntry extends EntryBase {
   _kind: 'known'
@@ -67,9 +74,9 @@ export interface UserEntry extends EntryBase {
   isMeta?: boolean
   promptId?: string
   promptSource?: string
-  origin?: string
+  origin?: UserOrigin
   permissionMode?: string
-  queuePriority?: number
+  queuePriority?: string
   planContent?: string
   interruptedMessageId?: string
   isCompactSummary?: boolean
@@ -79,6 +86,7 @@ export interface UserEntry extends EntryBase {
   sourceToolAssistantUUID?: string
   toolUseResult?: unknown
   toolDenialKind?: string
+  toolEndsTurn?: boolean
 }
 
 /** `type: "attachment"` — 添付データ。 */

@@ -51,15 +51,23 @@ const user = z.object({
   isMeta: z.boolean().optional(),
   isVisibleInTranscriptOnly: z.boolean().optional(),
   mcpMeta: z.unknown().optional(),
-  origin: z.string().optional(),
+  origin: z
+    .object({
+      kind: z.string(),
+      from: z.string().optional(),
+      senderTaskId: z.string().optional(),
+    })
+    .loose()
+    .optional(),
   permissionMode: z.string().optional(),
   planContent: z.string().optional(),
   promptId: z.string().optional(),
   promptSource: z.string().optional(),
-  queuePriority: z.number().optional(),
+  queuePriority: z.string().optional(),
   sourceToolAssistantUUID: z.string().optional(),
   sourceToolUseID: z.string().optional(),
   toolDenialKind: z.string().optional(),
+  toolEndsTurn: z.boolean().optional(),
   toolUseResult: z.unknown().optional(),
 }).loose()
 const attachment = z.object({
