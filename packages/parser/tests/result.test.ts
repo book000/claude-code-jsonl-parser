@@ -6,13 +6,13 @@ describe('Result', () => {
     const r = ok(42)
     expect(r.isOk).toBe(true)
     expect(r.isErr).toBe(false)
-    if (r.isOk) expect(r.value).toBe(42)
+    expect(r.value).toBe(42)
   })
 
   it('err は isErr=true / error を保持する', () => {
     const r = err('boom')
     expect(r.isErr).toBe(true)
-    if (r.isErr) expect(r.error).toBe('boom')
+    expect(r.error).toBe('boom')
   })
 
   it('map は Ok の値のみ変換する', () => {
@@ -22,7 +22,7 @@ describe('Result', () => {
 
   it('mapErr は Err の値のみ変換する', () => {
     const r = err('a').mapErr((e) => e + 'b')
-    if (r.isErr) expect(r.error).toBe('ab')
+    expect(r.error).toBe('ab')
   })
 
   it('andThen は Ok を連鎖する', () => {

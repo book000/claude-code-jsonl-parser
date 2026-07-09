@@ -54,6 +54,7 @@ export async function* parseJsonlFileStream(
       yield parseLine(raw, lineNumber)
     }
   } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/only-throw-error -- FileReadError は意図的な判別可能 union (Error 継承ではない)
     throw fileReadError(path, error)
   } finally {
     rl.close()

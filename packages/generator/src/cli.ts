@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { writeFile, mkdir } from 'node:fs/promises'
-import { join } from 'node:path'
+import path from 'node:path'
 import { scanCorpus } from './scanner'
 import { inferShape } from './infer'
 import { emitInterface, pascalCase } from './emit-types'
@@ -33,7 +33,7 @@ async function main(): Promise<void> {
   const typeBlocks: string[] = []
   const guardBlocks: string[] = []
   const registry: string[] = []
-  for (const [type, samples] of [...scan.samplesByType].sort()) {
+  for (const [type, samples] of [...scan.samplesByType].toSorted()) {
     const shape = inferShape(samples)
     const name = `${pascalCase(type)}Entry`
     const fn = `is${pascalCase(type)}`
@@ -61,9 +61,9 @@ async function main(): Promise<void> {
   const guardsOut = guardsHeader + guardBlocks.join('\n\n') + guardsRegistry
 
   await mkdir(out, { recursive: true })
-  await writeFile(join(out, 'types.generated.ts'), typesOut, 'utf8')
-  await writeFile(join(out, 'guards.generated.ts'), guardsOut, 'utf8')
-  console.error(`written: ${join(out, 'types.generated.ts')}, ${join(out, 'guards.generated.ts')}`)
+  await writeFile(path.join(out,'types.generated.ts'), typesOut, 'utf8')
+  await writeFile(path.join(out,'guards.generated.ts'), guardsOut, 'utf8')
+  console.error(`written: ${path.join(out,'types.generated.ts')}, ${path.join(out,'guards.generated.ts')}`)
   console.error('NOTE: review the diff before committing. content-block guards / message shapes are curated manually (see plan Task 06/08).')
 }
 

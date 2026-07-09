@@ -37,6 +37,7 @@ export interface ErrResult<E> {
 /** `OkResult<T>` または `ErrResult<E>`。 */
 export type Result<T, E> = OkResult<T> | ErrResult<E>
 
+/** `OkResult<T>` の実装。 */
 class OkResultImpl<T> implements OkResult<T> {
   readonly isOk = true as const
   readonly isErr = false as const
@@ -67,6 +68,7 @@ class OkResultImpl<T> implements OkResult<T> {
   }
 }
 
+/** `ErrResult<E>` の実装。 */
 class ErrResultImpl<E> implements ErrResult<E> {
   readonly isOk = false as const
   readonly isErr = true as const

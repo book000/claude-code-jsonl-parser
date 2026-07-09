@@ -2,14 +2,14 @@
 import { createReadStream } from 'node:fs'
 import { readdir, stat } from 'node:fs/promises'
 import { createInterface } from 'node:readline'
-import { join } from 'node:path'
+import path from 'node:path'
 import { validateLine, aggregateReport, hasFindings, type Finding } from './validate'
 
 /** `.jsonl` を再帰収集する。 */
 async function collectJsonl(dir: string): Promise<string[]> {
   const out: string[] = []
   for (const entry of await readdir(dir)) {
-    const full = join(dir, entry)
+    const full = path.join(dir, entry)
     const st = await stat(full)
     if (st.isDirectory()) out.push(...(await collectJsonl(full)))
     else if (entry.endsWith('.jsonl')) out.push(full)
@@ -43,7 +43,7 @@ async function main(): Promise<void> {
   }
 
   const report = aggregateReport(findings)
-  for (const [type, bucket] of [...report].sort()) {
+  for (const [type, bucket] of [...report].toSorted()) {
     console.log(`\n[${type}] ${bucket.length} finding(s)`)
     const byKind = new Map<string, number>()
     for (const f of bucket) byKind.set(f.kind, (byKind.get(f.kind) ?? 0) + 1)

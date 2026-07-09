@@ -1,7 +1,7 @@
 import { readdir, stat } from 'node:fs/promises'
 import { createReadStream } from 'node:fs'
 import { createInterface } from 'node:readline'
-import { join } from 'node:path'
+import path from 'node:path'
 
 /** スキャン結果。 */
 export interface ScanResult {
@@ -24,7 +24,7 @@ export interface ScanResult {
 async function collectJsonlFiles(dir: string): Promise<string[]> {
   const out: string[] = []
   for (const entry of await readdir(dir)) {
-    const full = join(dir, entry)
+    const full = path.join(dir, entry)
     const st = await stat(full)
     if (st.isDirectory()) {
       out.push(...(await collectJsonlFiles(full)))

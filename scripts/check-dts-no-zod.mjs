@@ -30,10 +30,12 @@ function collectDts(directory) {
   return results
 }
 
+// zod v4 は 'zod' 本体に加え 'zod/v4' 'zod/v3' 'zod/v4-mini' 等の subpath も
+// 公開しているため、bare specifier だけでなくそれらも検出対象にする。
 const ZOD_PATTERNS = [
-  /from\s+['"]zod['"]/,
-  /import\(['"]zod['"]\)/,
-  /require\(['"]zod['"]\)/,
+  /from\s+['"]zod(?:\/[^'"]*)?['"]/,
+  /import\(['"]zod(?:\/[^'"]*)?['"]\)/,
+  /require\(['"]zod(?:\/[^'"]*)?['"]\)/,
 ]
 
 let hadError = false

@@ -1,14 +1,22 @@
 import type { JsonKind, Shape } from './infer'
 
+/** JS 識別子として安全な名前かどうかを判定する正規表現。 */
+const IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/
+
+/** シングルクォート文字列リテラルとして安全になるよう `'` をエスケープする。 */
+function escapeSingleQuote(s: string): string {
+  return s.replaceAll('\'', String.raw`\'`)
+}
+
 /** 単一種別の required フィールドに対する検査式を返す。 */
 function checkExpr(name: string, kinds: Set<JsonKind>): string | undefined {
-  const access = `v.${/^[A-Za-z_$][\w$]*$/.test(name) ? name : `['${name}']`}`
+  const access = `v.${IDENTIFIER_RE.test(name) ? name : `['${escapeSingleQuote(name)}']`}`
   // object|null → isObject or null 許容
   const hasNull = kinds.has('null')
   const nonNull = [...kinds].filter((k) => k !== 'null')
   if (nonNull.length !== 1) {
     // 複数種別が混在する場合は存在確認のみ (過剰厳格を避ける)
-    return `'${name}' in v`
+    return `'${escapeSingleQuote(name)}' in v`
   }
   const kind = nonNull[0]
   const base: Partial<Record<JsonKind, string>> = {
@@ -19,7 +27,7 @@ function checkExpr(name: string, kinds: Set<JsonKind>): string | undefined {
     array: `Array.isArray(${access})`,
   }
   const expr = base[kind]
-  if (expr === undefined) return `'${name}' in v`
+  if (expr === undefined) return `'${escapeSingleQuote(name)}' in v`
   return hasNull ? `(${access} === null || ${expr})` : expr
 }
 
@@ -35,7 +43,10 @@ export function emitGuardFunction(
   type: string,
   shape: Shape
 ): string {
-  const checks: string[] = [`isObject(v)`, `v.type === '${type}'`]
+  const checks: string[] = [
+    `isObject(v)`,
+    `v.type === '${escapeSingleQuote(type)}'`,
+  ]
   for (const [name, field] of shape.fields) {
     if (name === 'type' || !field.required) continue
     const expr = checkExpr(name, field.kinds)

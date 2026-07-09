@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-// 未知の追加フィールドを許容するため .passthrough() は使わず、既定 (strip) にする。
+// 未知の追加フィールドを許容するため .loose() (passthrough 相当) にする。
 // validator は「未知フィールド出現」を別途検出するため、ここでは緩めに定義する。
 
 const entryBase = {
@@ -119,7 +119,16 @@ const prLink = z.object({ type: z.literal('pr-link'), prNumber: z.number(), prRe
 const frameLink = z.object({ type: z.literal('frame-link'), frameUrl: z.string(), path: z.string(), sessionId: z.string(), timestamp: z.string() })
 const fileHistorySnapshot = z.object({ type: z.literal('file-history-snapshot'), isSnapshotUpdate: z.boolean(), messageId: z.string(), snapshot: z.object({}).loose() })
 const started = z.object({ type: z.literal('started'), key: z.string(), agentId: z.string() })
-const result = z.object({ type: z.literal('result'), key: z.string(), agentId: z.string(), result: z.unknown() })
+const result = z.object({
+  type: z.literal('result'),
+  key: z.string(),
+  agentId: z.string(),
+  // z.unknown() 単体だと result キー自体が欠落していても undefined として通ってしまう
+  // (parser 側の guard は `'result' in v` でキーの実在を要求するため、ここでも合わせる)。
+  result: z.unknown().refine((v) => v !== undefined, {
+    message: 'result フィールドは必須です',
+  }),
+})
 
 /** type 文字列 → 公開 zod スキーマ。 */
 export const entrySchemas = {

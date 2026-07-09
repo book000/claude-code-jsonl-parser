@@ -10,7 +10,9 @@ export function jsonKind(v: unknown): JsonKind {
   if (v === null) return 'null'
   if (Array.isArray(v)) return 'array'
   const t = typeof v
-  if (t === 'string' || t === 'number' || t === 'boolean') return t
+  if ((['string', 'number', 'boolean'] as string[]).includes(t)) {
+    return t as 'string' | 'number' | 'boolean'
+  }
   return 'object'
 }
 
@@ -32,9 +34,12 @@ export interface Shape {
   fields: Map<string, FieldShape>
 }
 
+/** `InferOptions.maxLiterals` 省略時の既定値。 */
+const DEFAULT_MAX_LITERALS = 20
+
 /** 推論オプション。 */
 export interface InferOptions {
-  /** 文字列リテラルを列挙として保持する上限。超えたら literals を破棄。既定 20。 */
+  /** 文字列リテラルを列挙として保持する上限。超えたら literals を破棄。既定は `DEFAULT_MAX_LITERALS`。 */
   maxLiterals?: number
 }
 
@@ -48,7 +53,7 @@ export function inferShape(
   samples: Record<string, unknown>[],
   options: InferOptions = {}
 ): Shape {
-  const maxLiterals = options.maxLiterals ?? 20
+  const maxLiterals = options.maxLiterals ?? DEFAULT_MAX_LITERALS
   const count = samples.length
   const presence = new Map<string, number>()
   const kinds = new Map<string, Set<JsonKind>>()

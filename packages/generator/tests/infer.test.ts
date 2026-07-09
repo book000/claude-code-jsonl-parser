@@ -37,7 +37,7 @@ describe('inferShape', () => {
       { type: 'worktree-state', worktreeSession: { a: 1 }, sessionId: 's2' },
     ])
     const f = shape.fields.get('worktreeSession')
-    expect([...(f?.kinds ?? [])].sort()).toEqual(['null', 'object'])
+    expect([...(f?.kinds ?? [])].toSorted()).toEqual(['null', 'object'])
   })
 
   it('少数のリテラル文字列は literals として保持する', () => {
@@ -47,7 +47,7 @@ describe('inferShape', () => {
       { type: 'permission-mode', permissionMode: 'auto', sessionId: 's' },
     ])
     const f = shape.fields.get('permissionMode')
-    expect(f?.literals && [...f.literals].sort()).toEqual(['auto', 'default', 'plan'])
+    expect(f?.literals && [...f.literals].toSorted()).toEqual(['auto', 'default', 'plan'])
   })
 
   it('リテラルが閾値超なら literals を落とす (自由文字列扱い)', () => {

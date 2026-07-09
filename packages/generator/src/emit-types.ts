@@ -1,5 +1,13 @@
 import type { JsonKind, Shape } from './infer'
 
+/** JS 識別子として安全な名前かどうかを判定する正規表現。 */
+const IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/
+
+/** シングルクォート文字列リテラルとして安全になるよう `'` をエスケープする。 */
+function escapeSingleQuote(s: string): string {
+  return s.replaceAll('\'', String.raw`\'`)
+}
+
 /**
  * 観測種別集合 (と任意のリテラル集合) を TypeScript 型文字列に写像する。
  *
@@ -18,7 +26,7 @@ export function tsTypeOf(kinds: Set<JsonKind>, literals?: Set<string>): string {
   }
   // 文字列リテラルが与えられていれば開いた union にする
   if (literals && literals.size > 0 && kinds.has('string')) {
-    const lits = [...literals].sort().map((s) => `'${s.replace(/'/g, "\\'")}'`)
+    const lits = [...literals].toSorted().map((s) => `'${escapeSingleQuote(s)}'`)
     parts.push(`${lits.join(' | ')} | (string & {})`)
   } else if (kinds.has('string')) {
     parts.push('string')
@@ -32,7 +40,7 @@ export function tsTypeOf(kinds: Set<JsonKind>, literals?: Set<string>): string {
 
 /** JS 識別子として安全ならそのまま、そうでなければクォートする。 */
 function propKey(name: string): string {
-  return /^[A-Za-z_$][\w$]*$/.test(name) ? name : `'${name}'`
+  return IDENTIFIER_RE.test(name) ? name : `'${escapeSingleQuote(name)}'`
 }
 
 /** interface 名として使うため type 文字列を PascalCase 化する (エミッタ内部用)。 */
@@ -55,10 +63,11 @@ export function emitInterface(
   type: string,
   shape: Shape
 ): string {
-  const lines: string[] = []
-  lines.push(`export interface ${interfaceName} {`)
-  lines.push(`  _kind: 'known'`)
-  lines.push(`  type: '${type}'`)
+  const lines: string[] = [
+    `export interface ${interfaceName} {`,
+    `  _kind: 'known'`,
+    `  type: '${escapeSingleQuote(type)}'`,
+  ]
   for (const [name, field] of shape.fields) {
     if (name === 'type') continue
     const opt = field.required ? '' : '?'

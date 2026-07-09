@@ -19,8 +19,10 @@ export interface Finding {
 
 /** 既知 type のスキーマが宣言しているトップレベルキー集合を取り出す。 */
 function knownKeysOf(type: string): Set<string> | undefined {
-  const schema = (entrySchemas as Record<string, { shape?: Record<string, unknown> }>)[type]
-  if (!schema || !schema.shape) return undefined
+  const schema = (
+    entrySchemas as Record<string, { shape?: Record<string, unknown> } | undefined>
+  )[type]
+  if (!schema?.shape) return undefined
   return new Set(Object.keys(schema.shape))
 }
 

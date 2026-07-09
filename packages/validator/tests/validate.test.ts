@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it, expect } from 'vitest'
 import { validateLine, aggregateReport, hasFindings } from '../src/validate'
@@ -54,8 +54,8 @@ describe('aggregateReport / hasFindings', () => {
 })
 
 it('regressions.jsonl から全 finding 種別を検出する', () => {
-  const path = join(fileURLToPath(new URL('.', import.meta.url)), 'fixtures', 'regressions.jsonl')
-  const findings = readFileSync(path, 'utf8')
+  const fixturePath = path.join(fileURLToPath(new URL('.', import.meta.url)), 'fixtures', 'regressions.jsonl')
+  const findings = readFileSync(fixturePath, 'utf8')
     .split('\n')
     .filter((l) => l.trim() !== '')
     .flatMap((l) => validateLine(JSON.parse(l)))

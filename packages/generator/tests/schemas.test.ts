@@ -26,4 +26,11 @@ describe('公開 zod スキーマ', () => {
     }
     expect(entrySchemas.assistant.safeParse(ok).success).toBe(true)
   })
+
+  it('result は result キーが存在すれば任意の値を許容し、欠落は弾く', () => {
+    const base = { type: 'result', key: 'k', agentId: 'a' }
+    expect(entrySchemas.result.safeParse({ ...base, result: null }).success).toBe(true)
+    expect(entrySchemas.result.safeParse({ ...base, result: { ok: true } }).success).toBe(true)
+    expect(entrySchemas.result.safeParse(base).success).toBe(false)
+  })
 })

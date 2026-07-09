@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import { join } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseJsonlFile } from '../src/parse'
 import { KNOWN_TYPES } from '../src/generated/guards'
 
-const FIX = join(fileURLToPath(new URL('.', import.meta.url)), 'fixtures')
+const FIX = path.join(fileURLToPath(new URL('.', import.meta.url)), 'fixtures')
 
 describe('統合: fixture', () => {
   it('all-known-types.jsonl は 19 行すべてを KnownEntry としてパースする', async () => {
-    const r = await parseJsonlFile(join(FIX, 'all-known-types.jsonl'))
+    const r = await parseJsonlFile(path.join(FIX, 'all-known-types.jsonl'))
     expect(r.isOk).toBe(true)
     if (!r.isOk) return
     expect(r.value).toHaveLength(19)
@@ -20,7 +20,7 @@ describe('統合: fixture', () => {
   })
 
   it('content-blocks.jsonl はハイブリッド正規化される', async () => {
-    const r = await parseJsonlFile(join(FIX, 'content-blocks.jsonl'))
+    const r = await parseJsonlFile(path.join(FIX, 'content-blocks.jsonl'))
     if (!r.isOk) throw new Error('unexpected err')
     const asst = r.value[0]
     if (asst._kind === 'known' && asst.type === 'assistant') {
@@ -36,7 +36,7 @@ describe('統合: fixture', () => {
   })
 
   it('edge-cases.jsonl は空行スキップ・未知 type・shape 不一致を正しく分類する', async () => {
-    const r = await parseJsonlFile(join(FIX, 'edge-cases.jsonl'))
+    const r = await parseJsonlFile(path.join(FIX, 'edge-cases.jsonl'))
     if (!r.isOk) throw new Error('unexpected err')
     expect(r.value).toHaveLength(3)
     expect(r.value[0]._kind).toBe('known')
@@ -47,7 +47,7 @@ describe('統合: fixture', () => {
   })
 
   it('malformed.jsonl は不正行のみ LineParseError にして継続する', async () => {
-    const r = await parseJsonlFile(join(FIX, 'malformed.jsonl'))
+    const r = await parseJsonlFile(path.join(FIX, 'malformed.jsonl'))
     if (!r.isOk) throw new Error('unexpected err')
     expect(r.value).toHaveLength(3)
     expect(r.value[1]._kind).toBe('error')

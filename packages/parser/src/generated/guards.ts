@@ -18,15 +18,19 @@ import type {
 // プリミティブ検査ヘルパ
 // ---------------------------------------------------------------------------
 
+/** 配列でも null でもないプレーンオブジェクトかどうかを判定する。 */
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
+/** `string` かどうかを判定する。 */
 function isString(v: unknown): v is string {
   return typeof v === 'string'
 }
+/** `number` かどうかを判定する。 */
 function isNumber(v: unknown): v is number {
   return typeof v === 'number'
 }
+/** `boolean` かどうかを判定する。 */
 function isBoolean(v: unknown): v is boolean {
   return typeof v === 'boolean'
 }
@@ -51,11 +55,30 @@ function hasEntryBase(o: Record<string, unknown>): boolean {
 // 個別ガード (raw: unknown を受け、型述語を返す)
 // ---------------------------------------------------------------------------
 
+/** `AssistantMessage`/`UserMessage` に共通する必須文字列フィールド `role` を検査する。 */
+function hasMessageRole(message: Record<string, unknown>): boolean {
+  return isString(message.role)
+}
+
 function isAssistant(v: unknown): v is Omit<AssistantEntry, '_kind'> {
-  return isObject(v) && v.type === 'assistant' && hasEntryBase(v) && isObject(v.message)
+  return (
+    isObject(v) &&
+    v.type === 'assistant' &&
+    hasEntryBase(v) &&
+    isObject(v.message) &&
+    hasMessageRole(v.message) &&
+    isString(v.message.id) &&
+    isString(v.message.model)
+  )
 }
 function isUser(v: unknown): v is Omit<UserEntry, '_kind'> {
-  return isObject(v) && v.type === 'user' && hasEntryBase(v) && isObject(v.message)
+  return (
+    isObject(v) &&
+    v.type === 'user' &&
+    hasEntryBase(v) &&
+    isObject(v.message) &&
+    hasMessageRole(v.message)
+  )
 }
 function isAttachment(v: unknown): v is Omit<AttachmentEntry, '_kind'> {
   return isObject(v) && v.type === 'attachment' && hasEntryBase(v) && isObject(v.attachment)
@@ -234,7 +257,7 @@ function normalizeToolResultBlock(v: Record<string, unknown>): UserContentBlock 
 export function normalizeAssistantContent(
   content: unknown
 ): AssistantContentBlock[] {
-  if (!Array.isArray(content)) return []
+  if (!Array.isArray(content)) return [unknownBlock(content)]
   return content.map((el): AssistantContentBlock => {
     if (!isObject(el)) return unknownBlock(el)
     if (isTextBlock(el) || isThinkingBlock(el) || isToolUseBlock(el)) {
@@ -253,7 +276,7 @@ export function normalizeUserContent(
   content: unknown
 ): string | UserContentBlock[] {
   if (isString(content)) return content
-  if (!Array.isArray(content)) return []
+  if (!Array.isArray(content)) return [unknownBlock(content)]
   return content.map((el): UserContentBlock => {
     if (!isObject(el)) return unknownBlock(el)
     if (isTextBlock(el)) return el as unknown as UserContentBlock
