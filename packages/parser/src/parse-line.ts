@@ -45,9 +45,9 @@ export function parseLine(rawLine: string, lineNumber: number): ParsedLine {
     // ガードが存在しない = 未知 type
     return { _kind: 'unknown', lineNumber, raw: parsed }
   }
-  if (!matched) {
+  if (!matched.ok) {
     // 既知 type だが shape 不一致
-    return { _kind: 'unknown', lineNumber, raw: parsed, typeHint: type }
+    return { _kind: 'unknown', lineNumber, raw: parsed, typeHint: type, reason: matched.reason }
   }
 
   // shape 一致: _kind を付与し、content をハイブリッド正規化する

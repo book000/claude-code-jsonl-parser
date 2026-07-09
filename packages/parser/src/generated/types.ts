@@ -292,6 +292,8 @@ export interface UnknownEntry {
   raw: unknown
   /** ガードが存在する既知 type だが shape 不一致だった場合の type 値。存在しない type なら undefined。 */
   typeHint?: string
+  /** `typeHint` がある場合、どのフィールドが原因で shape 不一致になったかの診断メッセージ。 */
+  reason?: string
 }
 
 /** JSON 構文エラー行。 */
@@ -311,12 +313,14 @@ export type ParsedLine = KnownEntry | UnknownEntry | LineParseError
 
 /** `{ type: "text", text }`。 */
 export interface TextBlock {
+  _kind: 'known'
   type: 'text'
   text: string
 }
 
 /** `{ type: "thinking", thinking, signature }`。 */
 export interface ThinkingBlock {
+  _kind: 'known'
   type: 'thinking'
   thinking: string
   signature: string
@@ -324,6 +328,7 @@ export interface ThinkingBlock {
 
 /** `{ type: "tool_use", id, name, input, caller? }`。 */
 export interface ToolUseBlock {
+  _kind: 'known'
   type: 'tool_use'
   id: string
   name: string
@@ -333,6 +338,7 @@ export interface ToolUseBlock {
 
 /** tool_result 内 `{ type: "image", source }`。 */
 export interface ImageBlock {
+  _kind: 'known'
   type: 'image'
   source: {
     type: string
@@ -343,6 +349,7 @@ export interface ImageBlock {
 
 /** tool_result 内 `{ type: "tool_reference", tool_name }`。 */
 export interface ToolReferenceBlock {
+  _kind: 'known'
   type: 'tool_reference'
   tool_name: string
 }
@@ -356,13 +363,19 @@ export type ToolResultContentBlock =
 
 /** `{ type: "tool_result", tool_use_id, content, is_error? }`。 */
 export interface ToolResultBlock {
+  _kind: 'known'
   type: 'tool_result'
   tool_use_id: string
   content: string | ToolResultContentBlock[]
   is_error?: boolean
 }
 
-/** content ブロックがどの既知形状にも一致しなかった場合の部分フォールバック。 */
+/**
+ * content ブロックがどの既知形状にも一致しなかった場合の部分フォールバック。
+ * `_kind` は既知ブロック側と同じ判別子で、まずこれを見て `'unknown'` かどうかを
+ * 判定すれば、既知ブロック側は安全に `.type` で絞り込める
+ * (例: `if (block._kind === 'unknown') {...} else if (block.type === 'text') {...}`)。
+ */
 export interface UnknownContentBlock {
   _kind: 'unknown'
   raw: unknown

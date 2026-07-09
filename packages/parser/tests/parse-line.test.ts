@@ -26,6 +26,7 @@ describe('parseLine', () => {
     if (r._kind === 'unknown') {
       expect(r.typeHint).toBe('mode')
       expect(r.lineNumber).toBe(5)
+      expect(r.reason).toContain('mode')
     }
   })
 
@@ -57,7 +58,7 @@ describe('parseLine', () => {
     const r = parseLine(JSON.stringify(raw), 1)
     expect(r._kind).toBe('known')
     if (r._kind === 'known' && r.type === 'assistant') {
-      expect(r.message.content[0]).toEqual({ type: 'text', text: 'hi' })
+      expect(r.message.content[0]).toEqual({ _kind: 'known', type: 'text', text: 'hi' })
       expect((r.message.content[1] as { _kind: string })._kind).toBe('unknown')
     }
   })

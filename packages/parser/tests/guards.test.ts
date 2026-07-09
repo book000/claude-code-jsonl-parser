@@ -12,18 +12,19 @@ describe('generated/guards — トップレベル', () => {
   })
 
   it('mode の正しい行を通す', () => {
-    expect(guards.mode({ type: 'mode', mode: 'normal', sessionId: 's' })).toBe(true)
+    expect(guards.mode({ type: 'mode', mode: 'normal', sessionId: 's' })).toEqual({ ok: true })
   })
 
-  it('mode で必須フィールド欠落を弾く', () => {
-    expect(guards.mode({ type: 'mode', sessionId: 's' })).toBe(false)
-    expect(guards.mode({ type: 'mode', mode: 123, sessionId: 's' })).toBe(false)
+  it('mode で必須フィールド欠落を弾き、理由を返す', () => {
+    expect(guards.mode({ type: 'mode', sessionId: 's' }).ok).toBe(false)
+    expect(guards.mode({ type: 'mode', sessionId: 's' }).reason).toContain('mode')
+    expect(guards.mode({ type: 'mode', mode: 123, sessionId: 's' }).ok).toBe(false)
   })
 
   it('pr-link は prNumber が number であることを要求する', () => {
     const base = { type: 'pr-link', prRepository: 'r', prUrl: 'u', sessionId: 's', timestamp: 't' }
-    expect(guardByType('pr-link', { ...base, prNumber: 42 })).toBe(true)
-    expect(guardByType('pr-link', { ...base, prNumber: '42' })).toBe(false)
+    expect(guardByType('pr-link', { ...base, prNumber: 42 })).toEqual({ ok: true })
+    expect(guardByType('pr-link', { ...base, prNumber: '42' })?.ok).toBe(false)
   })
 
   it('assistant は message object と必須メタを要求する', () => {
@@ -33,9 +34,10 @@ describe('generated/guards — トップレベル', () => {
       userType: 'external', uuid: 'u', version: '1',
       message: { role: 'assistant', content: [], id: 'msg_1', model: 'claude-x' },
     }
-    expect(guardByType('assistant', ok)).toBe(true)
-    expect(guardByType('assistant', { ...ok, message: 'not-object' })).toBe(false)
-    expect(guardByType('assistant', { ...ok, uuid: undefined })).toBe(false)
+    expect(guardByType('assistant', ok)).toEqual({ ok: true })
+    expect(guardByType('assistant', { ...ok, message: 'not-object' })?.ok).toBe(false)
+    expect(guardByType('assistant', { ...ok, uuid: undefined })?.ok).toBe(false)
+    expect(guardByType('assistant', { ...ok, uuid: undefined })?.reason).toContain('uuid')
   })
 
   it('assistant は message.role / id / model が欠落した行を弾く', () => {
@@ -48,19 +50,19 @@ describe('generated/guards — トップレベル', () => {
       guardByType('assistant', {
         ...base,
         message: { content: [], id: 'msg_1', model: 'claude-x' },
-      })
+      })?.ok
     ).toBe(false)
     expect(
       guardByType('assistant', {
         ...base,
         message: { role: 'assistant', content: [], model: 'claude-x' },
-      })
+      })?.ok
     ).toBe(false)
     expect(
       guardByType('assistant', {
         ...base,
         message: { role: 'assistant', content: [], id: 'msg_1' },
-      })
+      })?.ok
     ).toBe(false)
   })
 
@@ -70,12 +72,12 @@ describe('generated/guards — トップレベル', () => {
       isSidechain: false, parentUuid: null, sessionId: 's', timestamp: 't',
       userType: 'external', uuid: 'u', version: '1',
     }
-    expect(guardByType('user', { ...base, message: { role: 'user', content: 'hi' } })).toBe(true)
-    expect(guardByType('user', { ...base, message: { content: 'hi' } })).toBe(false)
+    expect(guardByType('user', { ...base, message: { role: 'user', content: 'hi' } })).toEqual({ ok: true })
+    expect(guardByType('user', { ...base, message: { content: 'hi' } })?.ok).toBe(false)
   })
 
   it('started は sessionId 無しでも通る (workflow journal)', () => {
-    expect(guardByType('started', { type: 'started', key: 'k', agentId: 'a' })).toBe(true)
+    expect(guardByType('started', { type: 'started', key: 'k', agentId: 'a' })).toEqual({ ok: true })
   })
 
   it('未知 type は guardByType が undefined を返す', () => {
@@ -92,7 +94,7 @@ describe('generated/guards — content ブロック (ハイブリッド)', () =>
       { type: 'bogus', foo: 1 },
       { type: 'text' }, // text 欠落 → 降格
     ])
-    expect(out[0]).toEqual({ type: 'text', text: 'hi' })
+    expect(out[0]).toEqual({ _kind: 'known', type: 'text', text: 'hi' })
     expect((out[1] as { type: string }).type).toBe('thinking')
     expect((out[2] as { type: string }).type).toBe('tool_use')
     expect(out[3]).toEqual({ _kind: 'unknown', raw: { type: 'bogus', foo: 1 } })

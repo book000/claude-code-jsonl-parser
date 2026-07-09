@@ -51,3 +51,4 @@ export {
   guards, guardByType, KNOWN_TYPES,
   normalizeAssistantContent, normalizeUserContent,
 } from './generated/guards'
+export type { GuardResult } from './generated/guards'
