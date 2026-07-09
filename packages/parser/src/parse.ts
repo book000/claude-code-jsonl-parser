@@ -1,6 +1,9 @@
+import { createReadStream } from 'node:fs'
+import { createInterface } from 'node:readline'
 import type { ParsedLine } from './generated/types'
-import { ok, type Result } from './result'
+import { ok, ResultAsync, type Result } from './result'
 import { parseLine } from './parse-line'
+import { fileReadError, type FileReadError } from './errors'
 
 /**
  * JSONL 文字列を行単位で逐次パースする同期イテレータ。
@@ -29,4 +32,59 @@ export function* parseJsonlLines(text: string): Iterable<ParsedLine> {
  */
 export function parseJsonl(text: string): Result<ParsedLine[], never> {
   return ok([...parseJsonlLines(text)])
+}
+
+/**
+ * ファイルを行単位で逐次読み込み・パースする非同期イテレータ (定数メモリ)。
+ * I/O エラーは反復時に FileReadError を throw する。
+ *
+ * @param path - JSONL ファイルパス
+ */
+export async function* parseJsonlFileStream(
+  path: string
+): AsyncIterable<ParsedLine> {
+  const stream = createReadStream(path, { encoding: 'utf8' })
+  // 'error' を Promise 化して throw に載せるためのハンドリング
+  const rl = createInterface({ input: stream, crlfDelay: Infinity })
+  let lineNumber = 0
+  try {
+    for await (const raw of rl) {
+      if (raw.trim() === '') continue
+      lineNumber += 1
+      yield parseLine(raw, lineNumber)
+    }
+  } catch (error) {
+    throw fileReadError(path, error)
+  } finally {
+    rl.close()
+    stream.destroy()
+  }
+}
+
+/**
+ * ファイル全体を読み込み一括パースする。I/O エラーのみ Err になる。
+ *
+ * @param path - JSONL ファイルパス
+ */
+export function parseJsonlFile(
+  path: string
+): ResultAsync<ParsedLine[], FileReadError> {
+  return ResultAsync.fromPromise(
+    (async () => {
+      const out: ParsedLine[] = []
+      for await (const line of parseJsonlFileStream(path)) out.push(line)
+      return out
+    })(),
+    (error) => {
+      // parseJsonlFileStream が投げた FileReadError はそのまま通す
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        (error as { _tag?: string })._tag === 'FileReadError'
+      ) {
+        return error as FileReadError
+      }
+      return fileReadError(path, error)
+    }
+  )
 }
