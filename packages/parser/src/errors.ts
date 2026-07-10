@@ -14,10 +14,11 @@ export interface FileReadError {
  * @param error - 捕捉した例外
  */
 export function fileReadError(path: string, error: unknown): FileReadError {
-  const code =
+  const rawCode =
     typeof error === 'object' && error !== null && 'code' in error
-      ? String((error as { code?: unknown }).code)
+      ? (error as { code?: unknown }).code
       : undefined
+  const code = typeof rawCode === 'string' ? rawCode : undefined
   return {
     _tag: 'FileReadError',
     path,
