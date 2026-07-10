@@ -6,8 +6,12 @@ TypeScript monorepo for handling [Claude Code](https://claude.com/claude-code)
 JSONL conversation logs (`~/.claude/projects/**/*.jsonl`) in a type-safe way.
 Managed with pnpm workspaces. Three published packages:
 
-- `packages/parser` (`claude-code-jsonl-parser`) — zero-dependency parser. Never
-  throws; discriminates each line as `known` / `unknown` / `error`.
+- `packages/parser` (`claude-code-jsonl-parser`) — zero-dependency parser. Line
+  parsing never throws on malformed input; each line is discriminated as
+  `known` / `unknown` / `error`. File I/O errors are surfaced separately: the
+  streaming API `parseJsonlFileStream()` throws a `FileReadError` on read
+  failures during iteration, while `parseJsonlFile()` returns them as a
+  `ResultAsync` error instead.
 - `packages/generator` (`claude-code-jsonl-generator`) — CLI that infers and
   emits type definitions / guards from real JSONL corpora (uses `zod`).
 - `packages/validator` (`claude-code-jsonl-validator`) — CLI that regression-checks
