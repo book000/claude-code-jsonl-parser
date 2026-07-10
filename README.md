@@ -55,7 +55,7 @@ pnpm lint       # 型チェック + ESLint
 ```
 
 `claude-code-jsonl-parser` の `src/generated/` 配下は `claude-code-jsonl-generator` による生成物であり、
-`scripts/check-generated-sync.mjs` で再生成結果との同期を CI で検証している。
+`scripts/check-generated-sync.mjs` で再生成結果との同期をローカルで手動確認できる (CI では実行しない)。
 
 ## 📑 License
 

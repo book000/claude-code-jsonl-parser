@@ -16,7 +16,7 @@ export interface FileReadError {
 export function fileReadError(path: string, error: unknown): FileReadError {
   const code =
     typeof error === 'object' && error !== null && 'code' in error
-      ? String((error).code)
+      ? String((error as { code?: unknown }).code)
       : undefined
   return {
     _tag: 'FileReadError',
