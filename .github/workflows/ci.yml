@@ -13,6 +13,8 @@ permissions: {}
 
 jobs:
   ci:
+    permissions:
+      contents: read
     uses: book000/templates/.github/workflows/reusable-nodejs-ci-pnpm.yml@master
     with:
       directorys: "."
