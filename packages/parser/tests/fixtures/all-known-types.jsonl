@@ -1,0 +1,19 @@
+{"type":"assistant","cwd":"/repo","entrypoint":"cli","gitBranch":"main","isSidechain":false,"parentUuid":null,"sessionId":"sess-1","timestamp":"2026-01-01T00:00:00Z","userType":"external","uuid":"uuid-1","version":"1.0.0","message":{"id":"msg-1","type":"message","role":"assistant","model":"claude","content":[{"type":"text","text":"hello"}],"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{}}}
+{"type":"user","cwd":"/repo","entrypoint":"cli","gitBranch":"main","isSidechain":false,"parentUuid":"uuid-1","sessionId":"sess-1","timestamp":"2026-01-01T00:00:01Z","userType":"external","uuid":"uuid-2","version":"1.0.0","message":{"role":"user","content":"hi"}}
+{"type":"attachment","cwd":"/repo","entrypoint":"cli","gitBranch":"main","isSidechain":false,"parentUuid":"uuid-2","sessionId":"sess-1","timestamp":"2026-01-01T00:00:02Z","userType":"external","uuid":"uuid-3","version":"1.0.0","attachment":{"kind":"dummy"}}
+{"type":"system","cwd":"/repo","entrypoint":"cli","gitBranch":"main","isSidechain":false,"parentUuid":"uuid-3","sessionId":"sess-1","timestamp":"2026-01-01T00:00:03Z","userType":"external","uuid":"uuid-4","version":"1.0.0","subtype":"informational","content":"note"}
+{"type":"mode","mode":"normal","sessionId":"sess-1"}
+{"type":"permission-mode","permissionMode":"default","sessionId":"sess-1"}
+{"type":"ai-title","aiTitle":"Sample Title","sessionId":"sess-1"}
+{"type":"agent-name","agentName":"researcher","sessionId":"sess-1"}
+{"type":"agent-setting","agentSetting":"{}","sessionId":"sess-1"}
+{"type":"relocated","relocatedCwd":"/repo2","sessionId":"sess-1"}
+{"type":"last-prompt","leafUuid":"uuid-2","sessionId":"sess-1","lastPrompt":"do X"}
+{"type":"worktree-state","worktreeSession":null,"sessionId":"sess-1"}
+{"type":"bridge-session","bridgeSessionId":"bridge-1","lastSequenceNum":5,"sessionId":"sess-1"}
+{"type":"queue-operation","operation":"enqueue","sessionId":"sess-1","timestamp":"2026-01-01T00:00:04Z","content":"queued"}
+{"type":"pr-link","prNumber":42,"prRepository":"owner/repo","prUrl":"https://example.test/pr/42","sessionId":"sess-1","timestamp":"2026-01-01T00:00:05Z"}
+{"type":"frame-link","frameUrl":"https://example.test/frame","path":"/a/b","sessionId":"sess-1","timestamp":"2026-01-01T00:00:06Z"}
+{"type":"file-history-snapshot","isSnapshotUpdate":false,"messageId":"msg-1","snapshot":{"files":[]}}
+{"type":"started","key":"v2:abc","agentId":"agent-1"}
+{"type":"result","key":"v2:abc","agentId":"agent-1","result":{"summary":"done"}}

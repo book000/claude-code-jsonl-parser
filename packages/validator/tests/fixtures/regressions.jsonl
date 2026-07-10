@@ -1,0 +1,5 @@
+{"type":"mode","mode":"normal","sessionId":"s"}
+{"type":"brand-new-type","x":1}
+{"type":"mode","mode":"normal","sessionId":"s","brandNewField":true}
+{"type":"pr-link","prNumber":"not-a-number","prRepository":"r","prUrl":"u","sessionId":"s","timestamp":"t"}
+{"type":"mode","sessionId":"s"}

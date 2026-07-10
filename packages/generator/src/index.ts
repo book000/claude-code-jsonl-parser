@@ -1,0 +1,7 @@
+export { scanCorpus } from './scanner'
+export type { ScanResult } from './scanner'
+export { inferShape, jsonKind } from './infer'
+export type { Shape, FieldShape, JsonKind, InferOptions } from './infer'
+export { entrySchemas, knownTypeSchema, KNOWN_TYPES } from './schemas'
+export { emitInterface, tsTypeOf, pascalCase } from './emit-types'
+export { emitGuardFunction } from './emit-guards'

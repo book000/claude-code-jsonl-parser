@@ -1,0 +1,8 @@
+{
+  "references": [
+    { "path": "packages/parser" },
+    { "path": "packages/generator" },
+    { "path": "packages/validator" }
+  ],
+  "files": []
+}
