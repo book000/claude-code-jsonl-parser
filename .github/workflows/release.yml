@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    branches: [develop, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - name: Setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm -r build
+      - name: Verify dist contents
+        run: |
+          for pkg in parser generator validator; do
+            test -f "packages/$pkg/dist/index.js"
+            test -f "packages/$pkg/dist/index.d.ts"
+            test -f "packages/$pkg/dist/index.cjs"
+            test -f "packages/$pkg/dist/index.d.cts"
+          done
+          test -f packages/generator/dist/cli.js
+          test -f packages/validator/dist/cli.js
+      - name: Verify pack contents
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/pack-check
+          for name in claude-code-jsonl-parser claude-code-jsonl-generator claude-code-jsonl-validator; do
+            pnpm --filter "$name" pack --pack-destination /tmp/pack-check
+          done
+          for tarball in /tmp/pack-check/*.tgz; do
+            echo "Inspecting $tarball"
+            files=$(tar -tzf "$tarball")
+            echo "$files"
+            echo "$files" | grep -q '^package/dist/index.js$'
+            echo "$files" | grep -q '^package/dist/index.d.ts$'
+            echo "$files" | grep -q '^package/LICENSE$'
+            echo "$files" | grep -q '^package/README.md$'
+            ! echo "$files" | grep -q 'tsbuildinfo'
+          done
+      - name: Release
+        run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Back-merge master into develop
+        # Runs only after a stable release (master push) so that the release
+        # tag enters develop's ancestry - required for semantic-release to
+        # start a fresh pre-release cycle with the correct next version
+        # (e.g. v0.2.0-beta.1). Uses DEPLOY_KEY (an SSH deploy key with write
+        # access) to push to the protected develop branch. Configure it in
+        # repo Settings -> Deploy keys, and register it as a bypass actor in
+        # the develop branch ruleset.
+        if: github.ref == 'refs/heads/master'
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          trap 'rm -f ~/.ssh/deploy_key' EXIT
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          git config core.sshCommand "ssh -i ~/.ssh/deploy_key -F /dev/null"
+          git remote set-url origin git@github.com:${{ github.repository }}.git
+          # After the Release PR is merged, master's merge commit has develop
+          # HEAD as a parent, so pushing master HEAD to develop is always a
+          # valid fast-forward in the normal workflow. If develop has
+          # diverged due to a concurrent push, this push fails - resolve
+          # manually by merging master into develop.
+          git fetch origin develop
+          git push origin HEAD:refs/heads/develop

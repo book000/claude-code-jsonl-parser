@@ -1,0 +1,35 @@
+{
+  "name": "claude-code-jsonl-parser",
+  "version": "0.0.0",
+  "description": "Zero-dependency parser for Claude Code JSONL conversation logs",
+  "keywords": ["claude-code", "jsonl", "parser", "typescript"],
+  "license": "MIT",
+  "author": "Tomachi <tomachi@tomacheese.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/book000/claude-code-jsonl-parser.git",
+    "directory": "packages/parser"
+  },
+  "type": "module",
+  "files": ["dist", "!dist/*.tsbuildinfo"],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsdown && node ../../scripts/check-dts-no-zod.mjs",
+    "clean": "rimraf dist",
+    "lint": "tsc -p tsconfig.test.json"
+  }
+}

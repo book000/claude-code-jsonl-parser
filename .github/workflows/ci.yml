@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  ci:
+    uses: book000/templates/.github/workflows/reusable-nodejs-ci-pnpm.yml@master
+    with:
+      directorys: "."
+      # depcheck reports monorepo-shared root devDependencies (semantic-release
+      # plugins, tsdown, typescript, etc.) as unused because it does not
+      # understand pnpm workspace package boundaries.
+      disabled-jobs: depcheck
