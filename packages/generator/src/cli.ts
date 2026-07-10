@@ -33,7 +33,9 @@ async function main(): Promise<void> {
   const typeBlocks: string[] = []
   const guardBlocks: string[] = []
   const registry: string[] = []
-  for (const [type, samples] of [...scan.samplesByType].toSorted()) {
+  for (const [type, samples] of [...scan.samplesByType].toSorted((a, b) =>
+    a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0
+  )) {
     const shape = inferShape(samples)
     const name = `${pascalCase(type)}Entry`
     const fn = `is${pascalCase(type)}`
