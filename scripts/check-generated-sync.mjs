@@ -102,7 +102,8 @@ function parseDeclaredFields(filePath) {
     }
 
     const heritage = []
-    for (const clause of statement.heritageClauses ?? []) {
+    const clauses = statement.heritageClauses ?? []
+    for (const clause of clauses) {
       for (const t of clause.types) {
         heritage.push(t.expression.getText(sourceFile))
       }
@@ -126,7 +127,8 @@ function parseDeclaredFields(filePath) {
     if (entry === undefined) return new Set()
     const result = new Set(entry.members)
     for (const parent of entry.heritage) {
-      for (const f of resolveFields(parent, seen)) result.add(f)
+      const parentFields = resolveFields(parent, seen)
+      for (const f of parentFields) result.add(f)
     }
     return result
   }
@@ -151,13 +153,15 @@ for (const [type, samples] of samplesByType) {
     failures += 1
     continue
   }
-  const observed = [...inferShape(samples).fields.keys()]
+  const observed = inferShape(samples).fields.keys().toArray()
   const missing = observed.filter((f) => !declared.has(f))
   checked += 1
-  if (missing.length > 0) {
-    console.error(`FAIL: type "${type}" is missing field(s) in parser types.ts: ${missing.join(', ')}`)
-    failures += 1
+  if (missing.length === 0) {
+    continue
   }
+
+  console.error(`FAIL: type "${type}" is missing field(s) in parser types.ts: ${missing.join(', ')}`)
+  failures += 1
 }
 
 if (failures > 0) {

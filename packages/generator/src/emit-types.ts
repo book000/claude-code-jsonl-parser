@@ -26,7 +26,7 @@ export function tsTypeOf(kinds: Set<JsonKind>, literals?: Set<string>): string {
   }
   // 文字列リテラルが与えられていれば開いた union にする
   if (literals && literals.size > 0 && kinds.has('string')) {
-    const lits = [...literals].toSorted().map((s) => `'${escapeSingleQuote(s)}'`)
+    const lits = [...literals].toSorted((a, b) => a.localeCompare(b)).map((s) => `'${escapeSingleQuote(s)}'`)
     parts.push(`${lits.join(' | ')} | (string & {})`)
   } else if (kinds.has('string')) {
     parts.push('string')

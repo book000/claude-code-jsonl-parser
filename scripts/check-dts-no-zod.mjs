@@ -42,10 +42,12 @@ let hadError = false
 for (const file of collectDts(PARSER_DIST)) {
   const content = readFileSync(file, 'utf8')
   for (const pattern of ZOD_PATTERNS) {
-    if (pattern.test(content)) {
-      console.error(`ERROR: zod reference found in ${nodePath.relative(process.cwd(), file)}`)
-      hadError = true
+    if (!pattern.test(content)) {
+      continue
     }
+
+    console.error(`ERROR: zod reference found in ${nodePath.relative(process.cwd(), file)}`)
+    hadError = true
   }
 }
 if (hadError) {
