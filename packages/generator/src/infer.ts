@@ -10,10 +10,7 @@ export function jsonKind(v: unknown): JsonKind {
   if (v === null) return 'null'
   if (Array.isArray(v)) return 'array'
   const t = typeof v
-  if ((['string', 'number', 'boolean'] as string[]).includes(t)) {
-    return t as 'string' | 'number' | 'boolean'
-  }
-  return 'object'
+  return (['string', 'number', 'boolean'] as string[]).includes(t) ? (t as 'string' | 'number' | 'boolean') : 'object'
 }
 
 /** 1 フィールドの推論結果。 */
@@ -75,11 +72,7 @@ export function inferShape(
       } else if (kind === 'string') {
         const set = cur ?? new Set<string>()
         set.add(value as string)
-        if (set.size > maxLiterals) {
-          literals.set(key, null)
-        } else {
-          literals.set(key, set)
-        }
+        literals.set(key, set.size > maxLiterals ? null : set)
       }
     }
   }

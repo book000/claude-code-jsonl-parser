@@ -22,8 +22,7 @@ function knownKeysOf(type: string): Set<string> | undefined {
   const schema = (
     entrySchemas as Record<string, { shape?: Record<string, unknown> } | undefined>
   )[type]
-  if (!schema?.shape) return undefined
-  return new Set(Object.keys(schema.shape))
+  return schema?.shape ? new Set(Object.keys(schema.shape)) : undefined
 }
 
 /**
@@ -32,7 +31,6 @@ function knownKeysOf(type: string): Set<string> | undefined {
  * @param obj - パース済みの生 JSON
  */
 export function validateLine(obj: unknown): Finding[] {
-  const findings: Finding[] = []
   if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
     return [{ type: '<no-type>', kind: 'no-type', message: 'not a JSON object' }]
   }
@@ -42,6 +40,7 @@ export function validateLine(obj: unknown): Finding[] {
     return [{ type: '<no-type>', kind: 'no-type', message: 'missing string "type"' }]
   }
 
+  const findings: Finding[] = []
   const schema = knownTypeSchema(type)
   if (schema === undefined) {
     return [{ type, kind: 'unknown-type', message: `unknown type "${type}"` }]
@@ -85,6 +84,7 @@ export function validateLine(obj: unknown): Finding[] {
  */
 export function aggregateReport(findings: Finding[]): Map<string, Finding[]> {
   const report = new Map<string, Finding[]>()
+  // eslint-disable-next-line unicorn/prefer-group-by -- Map.groupBy は ES2024 であり、公開パッケージの lib ターゲット (ES2023) を変えないため
   for (const f of findings) {
     const bucket = report.get(f.type) ?? []
     bucket.push(f)

@@ -8,7 +8,8 @@ import { validateLine, aggregateReport, hasFindings, type Finding } from './vali
 /** `.jsonl` を再帰収集する。 */
 async function collectJsonl(dir: string): Promise<string[]> {
   const out: string[] = []
-  for (const entry of await readdir(dir)) {
+  const entries = await readdir(dir)
+  for (const entry of entries) {
     const full = path.join(dir, entry)
     const st = await stat(full)
     if (st.isDirectory()) out.push(...(await collectJsonl(full)))
@@ -25,7 +26,8 @@ async function main(): Promise<void> {
   }
 
   const findings: Finding[] = []
-  for (const file of await collectJsonl(corpus)) {
+  const files = await collectJsonl(corpus)
+  for (const file of files) {
     const rl = createInterface({
       input: createReadStream(file, { encoding: 'utf8' }),
       crlfDelay: Infinity,
@@ -43,7 +45,8 @@ async function main(): Promise<void> {
   }
 
   const report = aggregateReport(findings)
-  for (const [type, bucket] of [...report].toSorted(([a], [b]) => a.localeCompare(b))) {
+  const sortedReport = [...report].toSorted(([a], [b]) => a.localeCompare(b))
+  for (const [type, bucket] of sortedReport) {
     console.log(`\n[${type}] ${bucket.length} finding(s)`)
     const byKind = new Map<string, number>()
     for (const f of bucket) byKind.set(f.kind, (byKind.get(f.kind) ?? 0) + 1)

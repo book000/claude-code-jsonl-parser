@@ -5,11 +5,13 @@ describe('parseLine', () => {
   it('JSON 構文エラーは LineParseError になる', () => {
     const r = parseLine('{ not json', 3)
     expect(r._kind).toBe('error')
-    if (r._kind === 'error') {
-      expect(r.lineNumber).toBe(3)
-      expect(r.rawLine).toBe('{ not json')
-      expect(r.message).toMatch(/./)
+    if (r._kind !== 'error') {
+      return
     }
+
+    expect(r.lineNumber).toBe(3)
+    expect(r.rawLine).toBe('{ not json')
+    expect(r.message).toMatch(/./)
   })
 
   it('既知 type かつ shape 一致で KnownEntry になり _kind=known が付与される', () => {
@@ -23,11 +25,13 @@ describe('parseLine', () => {
   it('既知 type だが shape 不一致なら typeHint 付き UnknownEntry', () => {
     const r = parseLine(JSON.stringify({ type: 'mode', sessionId: 's' }), 5)
     expect(r._kind).toBe('unknown')
-    if (r._kind === 'unknown') {
-      expect(r.typeHint).toBe('mode')
-      expect(r.lineNumber).toBe(5)
-      expect(r.reason).toContain('mode')
+    if (r._kind !== 'unknown') {
+      return
     }
+
+    expect(r.typeHint).toBe('mode')
+    expect(r.lineNumber).toBe(5)
+    expect(r.reason).toContain('mode')
   })
 
   it('存在しない type は typeHint なし UnknownEntry', () => {
@@ -57,9 +61,11 @@ describe('parseLine', () => {
     }
     const r = parseLine(JSON.stringify(raw), 1)
     expect(r._kind).toBe('known')
-    if (r._kind === 'known' && r.type === 'assistant') {
-      expect(r.message.content[0]).toEqual({ _kind: 'known', type: 'text', text: 'hi' })
-      expect((r.message.content[1] as { _kind: string })._kind).toBe('unknown')
+    if (!(r._kind === 'known' && r.type === 'assistant')) {
+      return
     }
+
+    expect(r.message.content[0]).toEqual({ _kind: 'known', type: 'text', text: 'hi' })
+    expect((r.message.content[1] as { _kind: string })._kind).toBe('unknown')
   })
 })

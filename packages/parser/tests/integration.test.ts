@@ -28,11 +28,15 @@ describe('統合: fixture', () => {
       expect((asst.message.content[3] as { _kind: string })._kind).toBe('unknown')
     }
     const usr = r.value[1]
-    if (usr._kind === 'known' && usr.type === 'user' && Array.isArray(usr.message.content)) {
-      const tr = usr.message.content[0] as { type: string; content: unknown[] }
-      expect(tr.type).toBe('tool_result')
-      expect((tr.content[3] as { _kind: string })._kind).toBe('unknown')
+    if (
+      !(usr._kind === 'known' && usr.type === 'user' && Array.isArray(usr.message.content))
+    ) {
+      return
     }
+
+    const tr = usr.message.content[0] as { type: string; content: unknown[] }
+    expect(tr.type).toBe('tool_result')
+    expect((tr.content[3] as { _kind: string })._kind).toBe('unknown')
   })
 
   it('edge-cases.jsonl は空行スキップ・未知 type・shape 不一致を正しく分類する', async () => {

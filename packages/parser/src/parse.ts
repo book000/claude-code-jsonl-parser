@@ -81,19 +81,15 @@ export function parseJsonlFile(
   return ResultAsync.fromPromise(
     (async () => {
       const out: ParsedLine[] = []
+      // eslint-disable-next-line unicorn/prefer-array-from-async -- Array.fromAsync は ES2024 であり、公開パッケージの lib/実行時ターゲット (ES2023) を変えないため
       for await (const line of parseJsonlFileStream(path)) out.push(line)
       return out
     })(),
     (error) => {
       // parseJsonlFileStream が投げた FileReadError はそのまま通す
-      if (
-        typeof error === 'object' &&
+      return typeof error === 'object' &&
         error !== null &&
-        (error as { _tag?: string })._tag === 'FileReadError'
-      ) {
-        return error as FileReadError
-      }
-      return fileReadError(path, error)
+        (error as { _tag?: string })._tag === 'FileReadError' ? (error as FileReadError) : fileReadError(path, error)
     }
   )
 }
