@@ -1,4 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>book000/templates//renovate/base-public"]
+  "extends": ["github>book000/templates//renovate/base-public"],
+  "packageRules": [
+    {
+      "description": "Keep on 9.x: 10.x requires conventional-changelog-writer@9, but @semantic-release/release-notes-generator@14 depends on writer ^8. Lift once a stable generator release depends on writer 9.",
+      "matchPackageNames": ["conventional-changelog-conventionalcommits"],
+      "allowedVersions": "<10"
+    }
+  ]
 }

@@ -23,7 +23,8 @@ export interface ScanResult {
  */
 async function collectJsonlFiles(dir: string): Promise<string[]> {
   const out: string[] = []
-  for (const entry of await readdir(dir)) {
+  const entries = await readdir(dir)
+  for (const entry of entries) {
     const full = path.join(dir, entry)
     const st = await stat(full)
     if (st.isDirectory()) {
@@ -50,7 +51,8 @@ export async function scanCorpus(
   let malformedLines = 0
   let typelessLines = 0
 
-  for (const file of await collectJsonlFiles(corpusDir)) {
+  const files = await collectJsonlFiles(corpusDir)
+  for (const file of files) {
     const rl = createInterface({
       input: createReadStream(file, { encoding: 'utf8' }),
       crlfDelay: Infinity,
@@ -75,10 +77,12 @@ export async function scanCorpus(
       const record = obj as Record<string, unknown>
       const type = record.type as string
       const bucket = samplesByType.get(type) ?? []
-      if (bucket.length < maxSamplesPerType) {
-        bucket.push(record)
-        samplesByType.set(type, bucket)
+      if (!(bucket.length < maxSamplesPerType)) {
+        continue
       }
+
+      bucket.push(record)
+      samplesByType.set(type, bucket)
     }
   }
 
