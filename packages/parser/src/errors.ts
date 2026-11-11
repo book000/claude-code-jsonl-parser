@@ -1,17 +1,17 @@
-/** ファイル読み込み (I/O) 起因のエラー。JSON 構文エラーや未知 type は含まない。 */
+/** An error caused by file I/O. JSON syntax errors and unknown types are not included. */
 export interface FileReadError {
   _tag: 'FileReadError'
   path: string
-  /** Node.js のエラーコード (ENOENT / EACCES など)。取得できなければ undefined。 */
+  /** Node.js error code (`ENOENT`, `EACCES`, ...). `undefined` if unavailable. */
   code?: string
   message: string
 }
 
 /**
- * FileReadError を生成する。
+ * Creates a `FileReadError`.
  *
- * @param path - 対象パス
- * @param error - 捕捉した例外
+ * @param path - Target path
+ * @param error - Caught exception
  */
 export function fileReadError(path: string, error: unknown): FileReadError {
   const rawCode =

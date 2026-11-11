@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { parseLine } from '../src/parse-line'
 
 describe('parseLine', () => {
-  it('JSON 構文エラーは LineParseError になる', () => {
+  it('a JSON syntax error becomes a LineParseError', () => {
     const r = parseLine('{ not json', 3)
     expect(r._kind).toBe('error')
     if (r._kind !== 'error') {
@@ -14,7 +14,7 @@ describe('parseLine', () => {
     expect(r.message).toMatch(/./)
   })
 
-  it('既知 type かつ shape 一致で KnownEntry になり _kind=known が付与される', () => {
+  it('a known type with a matching shape becomes a KnownEntry with _kind=known', () => {
     const r = parseLine(JSON.stringify({ type: 'mode', mode: 'normal', sessionId: 's' }), 1)
     expect(r._kind).toBe('known')
     if (r._kind === 'known') {
@@ -22,7 +22,7 @@ describe('parseLine', () => {
     }
   })
 
-  it('既知 type だが shape 不一致なら typeHint 付き UnknownEntry', () => {
+  it('a known type with a mismatched shape becomes an UnknownEntry with typeHint', () => {
     const r = parseLine(JSON.stringify({ type: 'mode', sessionId: 's' }), 5)
     expect(r._kind).toBe('unknown')
     if (r._kind !== 'unknown') {
@@ -34,7 +34,7 @@ describe('parseLine', () => {
     expect(r.reason).toContain('mode')
   })
 
-  it('存在しない type は typeHint なし UnknownEntry', () => {
+  it('a nonexistent type becomes an UnknownEntry without typeHint', () => {
     const r = parseLine(JSON.stringify({ type: 'brand-new', x: 1 }), 2)
     expect(r._kind).toBe('unknown')
     if (r._kind === 'unknown') {
@@ -42,13 +42,13 @@ describe('parseLine', () => {
     }
   })
 
-  it('type フィールドが無いオブジェクトも UnknownEntry (typeHint なし)', () => {
+  it('an object without a type field is also an UnknownEntry (no typeHint)', () => {
     const r = parseLine(JSON.stringify({ foo: 1 }), 1)
     expect(r._kind).toBe('unknown')
     if (r._kind === 'unknown') expect(r.typeHint).toBeUndefined()
   })
 
-  it('assistant の content 配列はハイブリッド正規化される', () => {
+  it('assistant content arrays are normalized in the hybrid way', () => {
     const raw = {
       type: 'assistant', cwd: '/x', entrypoint: 'cli', gitBranch: 'm',
       isSidechain: false, parentUuid: null, sessionId: 's', timestamp: 't',

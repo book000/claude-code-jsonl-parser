@@ -8,6 +8,6 @@ export default defineConfig({
   clean: true,
   fixedExtension: false,
   outDir: 'dist',
-  // workspace 依存の generator は外部化 (バンドルしない)
+  // Externalize the workspace dependency on the generator (do not bundle it)
   deps: { neverBundle: ['claude-code-jsonl-generator'] },
 })

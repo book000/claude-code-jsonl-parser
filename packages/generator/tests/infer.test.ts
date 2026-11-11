@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { inferShape, jsonKind } from '../src/infer'
 
 describe('jsonKind', () => {
-  it('JSON 値の種別を返す', () => {
+  it('returns the kind of a JSON value', () => {
     expect(jsonKind('x')).toBe('string')
     expect(jsonKind(1)).toBe('number')
     expect(jsonKind(true)).toBe('boolean')
@@ -13,7 +13,7 @@ describe('jsonKind', () => {
 })
 
 describe('inferShape', () => {
-  it('全サンプルに存在するフィールドを required にする', () => {
+  it('marks fields present in every sample as required', () => {
     const shape = inferShape([
       { type: 'mode', mode: 'normal', sessionId: 's' },
       { type: 'mode', mode: 'plan', sessionId: 's2' },
@@ -22,7 +22,7 @@ describe('inferShape', () => {
     expect(shape.fields.get('sessionId')?.required).toBe(true)
   })
 
-  it('一部サンプルにのみ存在するフィールドを optional にする', () => {
+  it('marks fields present in only some samples as optional', () => {
     const shape = inferShape([
       { type: 'last-prompt', leafUuid: 'u', sessionId: 's', lastPrompt: 'p' },
       { type: 'last-prompt', leafUuid: 'u2', sessionId: 's2' },
@@ -31,7 +31,7 @@ describe('inferShape', () => {
     expect(shape.fields.get('leafUuid')?.required).toBe(true)
   })
 
-  it('観測された型集合を記録する (null と string の混在など)', () => {
+  it('records the observed kinds (e.g. a mix of null and string)', () => {
     const shape = inferShape([
       { type: 'worktree-state', worktreeSession: null, sessionId: 's' },
       { type: 'worktree-state', worktreeSession: { a: 1 }, sessionId: 's2' },
@@ -40,7 +40,7 @@ describe('inferShape', () => {
     expect([...(f?.kinds ?? [])].toSorted((a, b) => a.localeCompare(b))).toEqual(['null', 'object'])
   })
 
-  it('少数のリテラル文字列は literals として保持する', () => {
+  it('keeps a small number of string literals as literals', () => {
     const shape = inferShape([
       { type: 'permission-mode', permissionMode: 'default', sessionId: 's' },
       { type: 'permission-mode', permissionMode: 'plan', sessionId: 's' },
@@ -50,7 +50,7 @@ describe('inferShape', () => {
     expect(f?.literals && [...f.literals].toSorted((a, b) => a.localeCompare(b))).toEqual(['auto', 'default', 'plan'])
   })
 
-  it('リテラルが閾値超なら literals を落とす (自由文字列扱い)', () => {
+  it('drops literals above the threshold (treated as free-form strings)', () => {
     const samples = Array.from({ length: 60 }, (_, i) => ({
       type: 'ai-title', aiTitle: `title-${i}`, sessionId: 's',
     }))

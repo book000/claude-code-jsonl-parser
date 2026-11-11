@@ -1,20 +1,13 @@
 #!/usr/bin/env node
 /**
- * ローカル専用の決定論的同期チェック:
- * claude-code-jsonl-generator の推論ロジック (inferShape) が固定サンプルコーパス
- * (packages/parser/tests/fixtures/all-known-types.jsonl) から観測した
- * 「type ごとのトップレベルフィールド名」が、
- * packages/parser/src/generated/types.ts の手書きインターフェースに
- * すべて宣言されているかを検証する。
+ * Local-only deterministic sync check.
+ * Verifies that every top-level field name per type, as inferred by the generator (inferShape) from the fixed corpus
+ * packages/parser/tests/fixtures/all-known-types.jsonl, is declared in packages/parser/src/generated/types.ts.
  *
- * スコープ:
- * - 検証するのはフィールドの「存在」のみ。message / content-block の詳細形状は
- *   意図的に手動キュレーションされているため対象外 (トップレベルに
- *   `message` フィールドさえ宣言されていれば良い)。
- * - 固定コーパスに出現しない type / フィールドは検証対象外 (小規模なダミー
- *   fixture のため、実コーパス全体のカバレッジは保証しない)。
- * - CI では実行しない (ローカルでの手動同期確認用)。事前に `pnpm -r build` が
- *   必要 (generator の dist を読み込むため)。
+ * Scope:
+ * - Only field presence is checked. Message and content-block shapes are curated by hand on purpose and are out of scope.
+ * - Types and fields absent from the fixed corpus are not checked: it is a small fixture and does not cover real corpora.
+ * - Not run in CI. Requires `pnpm -r build` first because it loads the generator's dist.
  *
  * Usage: node scripts/check-generated-sync.mjs
  */
@@ -26,8 +19,8 @@ import ts from 'typescript'
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const ROOT = nodePath.join(__dirname, '..')
 const GENERATOR_DIST = nodePath.join(ROOT, 'packages', 'generator', 'dist', 'index.js')
-// all-known-types.jsonl のみを対象にする。edge-cases.jsonl / malformed.jsonl は
-// 未知 type や壊れた行をわざと含むテスト用データであり、正規の既知コーパスではない。
+// Use all-known-types.jsonl only. edge-cases.jsonl and malformed.jsonl
+// deliberately contain unknown types and broken lines; they are test data, not a canonical known corpus.
 const FIXTURES_DIR = nodePath.join(ROOT, 'packages', 'parser', 'tests', 'fixtures')
 const CORPUS_FILE = nodePath.join(FIXTURES_DIR, 'all-known-types.jsonl')
 const TYPES_FILE = nodePath.join(ROOT, 'packages', 'parser', 'src', 'generated', 'types.ts')
@@ -43,13 +36,13 @@ try {
 }
 
 /**
- * 単一の `.jsonl` ファイルを type ごとの生サンプルへグループ化する。
- * (generator の `scanCorpus` はディレクトリ走査用のため、単一の正規コーパス
- * ファイルを対象にするここでは使わず、同じ「type ごとに集約する」処理を
- * 直接行う。実際のフィールド推論ロジックは generator の `inferShape` を再利用する。)
+ * Groups the raw samples of a single `.jsonl` file by type.
+ * (The generator's `scanCorpus` walks directories, so it is not used for a single
+ * canonical corpus file; the same grouping is done directly here. The field
+ * inference itself reuses the generator's `inferShape`.)
  *
- * @param {string} filePath - 対象 `.jsonl` ファイル
- * @returns {Map<string, Record<string, unknown>[]>} type ごとの生サンプル
+ * @param {string} filePath - Target `.jsonl` file
+ * @returns {Map<string, Record<string, unknown>[]>} Raw samples per type
  */
 function groupByType(filePath) {
   const samplesByType = new Map()
@@ -67,10 +60,10 @@ function groupByType(filePath) {
 }
 
 /**
- * `types.ts` を解析し、type リテラル → 宣言済みトップレベルフィールド名集合、を返す。
+ * Parses `types.ts` and returns a map from type literal to the set of declared top-level field names.
  *
- * @param {string} filePath - 解析対象ファイル
- * @returns {Map<string, Set<string>>} type リテラル文字列 → フィールド名集合
+ * @param {string} filePath - File to parse
+ * @returns {Map<string, Set<string>>} Type literal string to field name set
  */
 function parseDeclaredFields(filePath) {
   const source = readFileSync(filePath, 'utf8')
@@ -78,7 +71,7 @@ function parseDeclaredFields(filePath) {
 
   /** @type {Map<string, {members: Set<string>, heritage: string[]}>} */
   const interfaces = new Map()
-  /** @type {Map<string, string>} type リテラル → インターフェース名 */
+  /** @type {Map<string, string>} type literal to interface name */
   const typeLiteralToInterface = new Map()
 
   for (const statement of sourceFile.statements) {
@@ -114,11 +107,11 @@ function parseDeclaredFields(filePath) {
   }
 
   /**
-   * インターフェース自身 + 継承元のフィールド名を再帰的に集約する。
+   * Recursively collects the field names of an interface and the interfaces it extends.
    *
-   * @param {string} name - インターフェース名
-   * @param {Set<string>} [seen] - 循環防止用
-   * @returns {Set<string>} 集約済みフィールド名集合
+   * @param {string} name - Interface name
+   * @param {Set<string>} [seen] - Guards against cycles
+   * @returns {Set<string>} Collected field names
    */
   function resolveFields(name, seen = new Set()) {
     if (seen.has(name)) return new Set()

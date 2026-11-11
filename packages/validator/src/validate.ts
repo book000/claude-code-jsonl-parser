@@ -1,23 +1,23 @@
 import { entrySchemas, knownTypeSchema } from 'claude-code-jsonl-generator'
 
-/** 検出種別。 */
+/** Kind of finding. */
 export type FindingKind =
   | 'no-type'
   | 'unknown-type'
   | 'schema-mismatch'
   | 'unknown-field'
 
-/** 1 件の検出。 */
+/** One finding. */
 export interface Finding {
-  /** 対象 type (type 無しの場合は '<no-type>')。 */
+  /** Target type (`'<no-type>'` if the line has none). */
   type: string
   kind: FindingKind
-  /** unknown-field のときのフィールド名。 */
+  /** Field name for `unknown-field` (and the issue path for `schema-mismatch`). */
   field?: string
   message: string
 }
 
-/** 既知 type のスキーマが宣言しているトップレベルキー集合を取り出す。 */
+/** Returns the top-level keys declared by the schema of a known type. */
 function knownKeysOf(type: string): Set<string> | undefined {
   const schema = (
     entrySchemas as Record<string, { shape?: Record<string, unknown> } | undefined>
@@ -26,9 +26,9 @@ function knownKeysOf(type: string): Set<string> | undefined {
 }
 
 /**
- * 1 行 (パース済み JSON) を検証して findings を返す。
+ * Validates one line (parsed JSON) and returns its findings.
  *
- * @param obj - パース済みの生 JSON
+ * @param obj - Parsed raw JSON
  */
 export function validateLine(obj: unknown): Finding[] {
   if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
@@ -46,7 +46,6 @@ export function validateLine(obj: unknown): Finding[] {
     return [{ type, kind: 'unknown-type', message: `unknown type "${type}"` }]
   }
 
-  // スキーマ検証 (必須欠落・型不一致)
   const parsed = schema.safeParse(record)
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
@@ -59,7 +58,6 @@ export function validateLine(obj: unknown): Finding[] {
     }
   }
 
-  // 未知フィールド検出 (スキーマが列挙するキー以外)
   const known = knownKeysOf(type)
   if (known) {
     for (const key of Object.keys(record)) {
@@ -78,13 +76,13 @@ export function validateLine(obj: unknown): Finding[] {
 }
 
 /**
- * findings を type ごとに集計する。
+ * Groups findings by type.
  *
- * @param findings - 全 findings
+ * @param findings - All findings
  */
 export function aggregateReport(findings: Finding[]): Map<string, Finding[]> {
   const report = new Map<string, Finding[]>()
-  // eslint-disable-next-line unicorn/prefer-group-by -- Map.groupBy は ES2024 であり、公開パッケージの lib ターゲット (ES2023) を変えないため
+  // eslint-disable-next-line unicorn/prefer-group-by -- Map.groupBy is ES2024; avoid changing the lib target (ES2023) of the published package
   for (const f of findings) {
     const bucket = report.get(f.type) ?? []
     bucket.push(f)
@@ -94,9 +92,9 @@ export function aggregateReport(findings: Finding[]): Map<string, Finding[]> {
 }
 
 /**
- * レポートに 1 件でも finding があれば true。
+ * Returns true if the report contains at least one finding.
  *
- * @param report - 集計済みレポート
+ * @param report - Aggregated report
  */
 export function hasFindings(report: Map<string, Finding[]>): boolean {
   for (const bucket of report.values()) {

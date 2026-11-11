@@ -1,22 +1,22 @@
 # claude-code-jsonl-parser
 
-Claude Code の JSONL 会話ログ (`~/.claude/projects/**/*.jsonl` など) を型安全にパースする、依存ゼロの TypeScript ライブラリ。
+A zero-dependency TypeScript library that parses Claude Code JSONL conversation logs (such as `~/.claude/projects/**/*.jsonl`) in a type-safe way.
 
 ## ✨ Features
 
-- **依存ゼロ** — 実行時 dependencies なし
-- **例外を投げない** — 1 行ずつのパース結果を `known` / `unknown` / `error` の 3 値で判別
-- **ESM + CJS 両対応** — Node.js の ESM/CJS どちらからも利用可能
-- **診断可能な `unknown`** — 既知 type だが形状不一致の行は `typeHint`/`reason` 付きで表現され、データを失わない
-- **一括 API とストリーミング API** — ファイル全体を一括で読む API と、定数メモリで逐次処理する API の両方を提供
+- **Zero dependencies**: no runtime dependencies
+- **No exceptions on bad input**: each line is classified as `known` / `unknown` / `error`
+- **Diagnosable `unknown`**: a line of a known type with a mismatched shape is represented with `typeHint` and `reason`, so no data is lost
+- **Whole-file and streaming APIs**: read a whole file at once, or process it line by line in constant memory
+- **ESM and CJS**: usable from both Node.js module systems
 
-## 📦 インストール
+## 📦 Installation
 
 ```bash
 npm install claude-code-jsonl-parser
 ```
 
-## 🚀 クイックスタート
+## 🚀 Quick start
 
 ```ts
 import { parseJsonlFile } from 'claude-code-jsonl-parser'
@@ -31,23 +31,22 @@ if (result.isOk) {
 }
 ```
 
-`parseJsonlFile` はファイル I/O エラー (存在しない、権限がない等) のみ `Err` を返す。
-JSON 構文エラーや未知の形状の行は例外にはならず、各行の `ParsedLine` 自体が
-`_kind: 'error'` / `_kind: 'unknown'` として表現される (後述)。
+`parseJsonlFile` returns `Err` only for file I/O errors (the file does not exist, no permission, and so on).
+A line with a JSON syntax error or an unknown shape does not cause an exception: the line itself is represented as a `ParsedLine` with `_kind: 'error'` or `_kind: 'unknown'` (see below).
 
 ## 📖 API
 
-### 一括 API とストリーミング API
+### Whole-text, whole-file and streaming APIs
 
-| 関数 | 用途 |
+| Function | Purpose |
 | --- | --- |
-| `parseJsonl(text)` | 文字列全体を一括パース (`Result<ParsedLine[], never>`) |
-| `parseJsonlLines(text)` | 文字列全体を行単位の同期イテレータでパース |
-| `parseJsonlFile(path)` | ファイルを一括読み込み・一括パース (`ResultAsync<ParsedLine[], FileReadError>`) |
-| `parseJsonlFileStream(path)` | ファイルを 1 行ずつ非同期イテレータでパース (定数メモリ) |
+| `parseJsonl(text)` | Parses a whole string at once (`Result<ParsedLine[], never>`) |
+| `parseJsonlLines(text)` | Parses a whole string with a synchronous line-by-line iterator |
+| `parseJsonlFile(path)` | Reads and parses a whole file at once (`ResultAsync<ParsedLine[], FileReadError>`) |
+| `parseJsonlFileStream(path)` | Parses a file line by line with an asynchronous iterator (constant memory); a read failure is thrown as a `FileReadError` during iteration |
 
-数十 MB 以上の大きなログファイルを扱う場合は `parseJsonlFileStream` を使うと、
-全行を配列に保持しないぶんメモリ使用量を抑えられる。
+Blank lines are skipped and do not count towards line numbers.
+For large log files (tens of MB or more), `parseJsonlFileStream` keeps memory usage down because it does not hold every line in an array.
 
 ```ts
 import { parseJsonlFileStream } from 'claude-code-jsonl-parser'
@@ -59,9 +58,9 @@ for await (const line of parseJsonlFileStream('/path/to/large-session.jsonl')) {
 }
 ```
 
-### ParsedLine の 3 値判別
+### Discriminating a ParsedLine
 
-行ごとのパース結果は `_kind` で判別する。
+Discriminate the result of each line by `_kind`.
 
 ```ts
 import type { ParsedLine } from 'claude-code-jsonl-parser'
@@ -69,59 +68,61 @@ import type { ParsedLine } from 'claude-code-jsonl-parser'
 function handle(line: ParsedLine) {
   switch (line._kind) {
     case 'known': {
-      // line.type で assistant / user / system / ... にさらに絞り込める
+      // line.type narrows further to assistant / user / system / ...
       break
     }
     case 'unknown': {
-      // 未知 type、または既知 type だが形状不一致。
-      // line.typeHint: 形状不一致なら元の type 値 (未知 type なら undefined)
-      // line.reason: 形状不一致の場合、どのフィールドが原因かの診断メッセージ
+      // An unknown type, or a known type with a mismatched shape.
+      // line.raw: the parsed JSON value as is
+      // line.typeHint: the original type value for a shape mismatch (undefined for an unknown type)
+      // line.reason: for a shape mismatch, a diagnostic message naming the offending fields
       break
     }
     case 'error': {
-      // JSON 構文エラー行。line.message に構文エラーメッセージ
+      // A line with a JSON syntax error. line.rawLine is the text and line.message the syntax error message
       break
     }
   }
 }
 ```
 
-`known` かつ既知 type だがガードの必須フィールドを満たさない行は、データを失わず
-`unknown` (`typeHint` に元の type、`reason` に不一致理由) として表現される。
-例外は投げない。
+A line of a known type that does not satisfy the guard's required fields is not dropped: it is represented as `unknown` (`typeHint` holds the original type and `reason` the cause), and no exception is thrown.
 
-### content ブロックの絞り込み
+### Narrowing content blocks
 
-`assistant`/`user` の `message.content` 配列の要素 (`AssistantContentBlock` /
-`UserContentBlock`) も、既知ブロックと `UnknownContentBlock` の判別 union になっている。
-先に `_kind` で `'unknown'` かどうかを判定してから `.type` で絞り込む。
+The elements of `message.content` in `assistant` / `user` entries (`AssistantContentBlock` / `UserContentBlock`) are also discriminated unions of known blocks and `UnknownContentBlock`.
+Check `_kind` for `'unknown'` first, then narrow by `.type`.
 
 ```ts
 import type { AssistantContentBlock } from 'claude-code-jsonl-parser'
 
 function describe(block: AssistantContentBlock): string {
-  if (block._kind === 'unknown') return '(未知ブロック)'
+  if (block._kind === 'unknown') return '(unknown block)'
   if (block.type === 'text') return block.text
   if (block.type === 'thinking') return block.thinking
   return `tool_use: ${block.name}`
 }
 ```
 
-### 公開されている型ガード (上級者向け)
+### Result
 
-`guards` / `guardByType` / `KNOWN_TYPES` / `normalizeAssistantContent` /
-`normalizeUserContent` は、独自のパースパイプラインを組みたい場合のために
-公開されている。通常の利用では `parseJsonlFile` 系の API で十分。
+`parseJsonl` and `parseJsonlFile` return a dependency-free `Result` / `ResultAsync`. Both expose `map`, `mapErr`, `andThen`, `match` and `unwrapOr`; `ok`, `err` and `ResultAsync` are exported.
+A `Result` has `isOk` / `isErr` and either `value` or `error`; a `ResultAsync` can be awaited to obtain the `Result`.
+
+### Exported type guards (advanced)
+
+`guards`, `guardByType`, `KNOWN_TYPES`, `normalizeAssistantContent` and `normalizeUserContent` are exported for building your own parsing pipeline.
+For normal use, the `parseJsonlFile` family of APIs is enough.
 
 ```ts
 import { guardByType } from 'claude-code-jsonl-parser'
 
 const result = guardByType('assistant', someRawObject)
-// result === undefined          → 'assistant' というガード自体が存在しない
-// result.ok === true            → 形状一致
-// result.ok === false, result.reason → 形状不一致とその理由
+// result === undefined          -> there is no guard for 'assistant' (unknown type)
+// result.ok === true            -> the shape matches
+// result.ok === false, result.reason -> the shape does not match, and why
 ```
 
-## 📑 ライセンス
+## 📑 License
 
-このプロジェクトは [MIT License](./LICENSE) の下で公開されている。
+This project is released under the [MIT License](./LICENSE).

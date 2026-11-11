@@ -1,18 +1,18 @@
 import type { JsonKind, Shape } from './infer'
 
-/** JS 識別子として安全な名前かどうかを判定する正規表現。 */
+/** Matches names that are safe to use as a JS identifier. */
 const IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/
 
-/** シングルクォート文字列リテラルとして安全になるよう `'` をエスケープする。 */
+/** Escapes `'` so the value is safe inside a single-quoted string literal. */
 function escapeSingleQuote(s: string): string {
   return s.replaceAll('\'', String.raw`\'`)
 }
 
 /**
- * 観測種別集合 (と任意のリテラル集合) を TypeScript 型文字列に写像する。
+ * Maps the observed kinds (and an optional literal set) to a TypeScript type string.
  *
- * @param kinds - 観測された JSON 種別
- * @param literals - 文字列リテラル集合 (あれば)
+ * @param kinds - Observed JSON kinds
+ * @param literals - String literal set, if any
  */
 export function tsTypeOf(kinds: Set<JsonKind>, literals?: Set<string>): string {
   const parts: string[] = []
@@ -24,7 +24,7 @@ export function tsTypeOf(kinds: Set<JsonKind>, literals?: Set<string>): string {
     array: 'unknown[]',
     object: 'Record<string, unknown>',
   }
-  // 文字列リテラルが与えられていれば開いた union にする
+  // With string literals, emit an open union (`'a' | 'b' | (string & {})`)
   if (literals && literals.size > 0 && kinds.has('string')) {
     const lits = [...literals].toSorted((a, b) => a.localeCompare(b)).map((s) => `'${escapeSingleQuote(s)}'`)
     parts.push(`${lits.join(' | ')} | (string & {})`)
@@ -34,16 +34,15 @@ export function tsTypeOf(kinds: Set<JsonKind>, literals?: Set<string>): string {
   for (const k of ['number', 'boolean', 'array', 'object', 'null'] as JsonKind[]) {
     if (kinds.has(k)) parts.push(mapped[k])
   }
-  // 重複除去して結合
   return [...new Set(parts)].join(' | ')
 }
 
-/** JS 識別子として安全ならそのまま、そうでなければクォートする。 */
+/** Returns the name as is if it is a safe identifier, otherwise quotes it. */
 function propKey(name: string): string {
   return IDENTIFIER_RE.test(name) ? name : `'${escapeSingleQuote(name)}'`
 }
 
-/** interface 名として使うため type 文字列を PascalCase 化する (エミッタ内部用)。 */
+/** Converts a type string (split on `-` and `_`) to PascalCase for use as an interface name. */
 export function pascalCase(type: string): string {
   return type
     .split(/[-_]/)
@@ -52,11 +51,11 @@ export function pascalCase(type: string): string {
 }
 
 /**
- * 1 type の interface 文字列を生成する。
+ * Generates the source of the interface for one type.
  *
- * @param interfaceName - 出力する interface 名 (例 LastPromptEntry)
- * @param type - 判別子文字列 (例 last-prompt)
- * @param shape - 推論結果
+ * @param interfaceName - Interface name to emit (e.g. `LastPromptEntry`)
+ * @param type - Discriminator string (e.g. `last-prompt`)
+ * @param shape - Inference result
  */
 export function emitInterface(
   interfaceName: string,

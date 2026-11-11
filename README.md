@@ -1,22 +1,22 @@
 # claude-code-jsonl-parser
 
-[Claude Code](https://claude.com/claude-code) の JSONL 会話ログ (`~/.claude/projects/**/*.jsonl` など) を
-型安全に扱うための TypeScript モノレポ。パーサー・スキーマ生成 CLI・回帰検証 CLI の 3 パッケージで構成される。
+A TypeScript monorepo for handling [Claude Code](https://claude.com/claude-code) JSONL conversation logs (such as `~/.claude/projects/**/*.jsonl`) in a type-safe way.
+It consists of three packages: a parser, a schema-generation CLI and a regression-check CLI.
 
 ## ✨ Features
 
-- **依存ゼロのパーサー** — 実行時 dependencies なしで JSONL を型安全にパース、例外を投げず `known` / `unknown` / `error` の 3 値で判別
-- **実コーパス駆動の型生成** — 手書きスキーマではなく、実際の `.jsonl` コーパスをスキャンして型定義・型ガードを生成
-- **回帰検証 CLI** — 生成済みスキーマに対して実コーパスを検証し、CI でリグレッションを検知
-- **ESM + CJS 両対応** — 各パッケージとも Node.js の ESM/CJS どちらからも利用可能
+- **Zero-dependency parser**: parses JSONL in a type-safe way with no runtime dependencies, and never throws on malformed lines; each line is classified as `known` / `unknown` / `error`
+- **Corpus-driven type generation**: scans real `.jsonl` corpora instead of relying on hand-written schemas, and emits type definitions and type guards
+- **Regression-check CLI**: validates a real corpus against the known schemas, so schema drift can be caught in CI
+- **ESM and CJS**: every package can be used from both Node.js module systems
 
 ## 📦 Packages
 
-| パッケージ | 説明 |
+| Package | Description |
 | --- | --- |
-| [`claude-code-jsonl-parser`](packages/parser) | 依存ゼロの Claude Code JSONL パーサー (Result/ResultAsync ベース) |
-| [`claude-code-jsonl-generator`](packages/generator) | 実コーパスから型定義・型ガードを生成する CLI |
-| [`claude-code-jsonl-validator`](packages/validator) | 生成済みスキーマに対する回帰検証 CLI |
+| [`claude-code-jsonl-parser`](packages/parser) | Zero-dependency Claude Code JSONL parser (based on Result / ResultAsync) |
+| [`claude-code-jsonl-generator`](packages/generator) | CLI that generates type definitions and type guards from a real corpus |
+| [`claude-code-jsonl-validator`](packages/validator) | CLI that checks a real corpus against the known schemas |
 
 ## 🚀 Quick Start
 
@@ -37,26 +37,29 @@ if (result.isOk) {
 }
 ```
 
-詳しい API は各パッケージの README を参照。
+See each package's README for the full API.
 
 ## 📖 Documentation
 
-- **[claude-code-jsonl-parser](packages/parser/README.md)** — パース API、`ParsedLine`/content ブロックの絞り込み、型ガード
-- **[claude-code-jsonl-generator](packages/generator/README.md)** — 型定義・型ガードの生成 CLI
-- **[claude-code-jsonl-validator](packages/validator/README.md)** — 回帰検証 CLI
+- **[claude-code-jsonl-parser](packages/parser/README.md)**: parse API, narrowing `ParsedLine` and content blocks, type guards
+- **[claude-code-jsonl-generator](packages/generator/README.md)**: CLI that generates type definitions and type guards
+- **[claude-code-jsonl-validator](packages/validator/README.md)**: regression-check CLI
 
-## 🛠️ 開発
+## 🛠️ Development
+
+Requires the Node.js version in `.node-version` and pnpm (version pinned by `packageManager` in `package.json`).
 
 ```bash
 pnpm install
-pnpm -r build   # 全パッケージをビルド
-pnpm test       # 全パッケージのテストを実行
-pnpm lint       # 型チェック + ESLint
+pnpm -r build   # build all packages
+pnpm test       # run the tests of all packages
+pnpm lint       # type check + ESLint
 ```
 
-`claude-code-jsonl-parser` の `src/generated/` 配下は `claude-code-jsonl-generator` による生成物であり、
-`scripts/check-generated-sync.mjs` で再生成結果との同期をローカルで手動確認できる (CI では実行しない)。
+The files under `packages/parser/src/generated/` are maintained by hand; they are not overwritten by `claude-code-jsonl-generator`, which writes `types.generated.ts` and `guards.generated.ts` to the directory given by `--out`.
+After `pnpm -r build`, `pnpm check:generated-sync` (`scripts/check-generated-sync.mjs`) checks locally that the fields the generator infers from the fixture corpus are declared in the parser's `generated/types.ts`. It is not run in CI.
+See [AGENTS.md](AGENTS.md) for the repository conventions.
 
 ## 📑 License
 
-このプロジェクトは [MIT License](LICENSE) の下で公開されている。
+This project is released under the [MIT License](LICENSE).
