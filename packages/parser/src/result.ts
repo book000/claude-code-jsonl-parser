@@ -1,32 +1,32 @@
 /**
  * Zero-dependency Result / ResultAsync implementation.
  *
- * neverthrow に近い使い勝手を、外部依存なしで提供する。
+ * Offers neverthrow-like ergonomics without any external dependency.
  */
 
 // ---------------------------------------------------------------------------
 // Result<T, E>
 // ---------------------------------------------------------------------------
 
-/** 成功を表す。`value` を保持する。 */
+/** A success. Holds `value`. */
 export interface OkResult<T> {
   readonly isOk: true
   readonly isErr: false
   readonly value: T
   map<U>(fn: (value: T) => U): OkResult<U>
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- ErrResult.mapErr<F> と対称の公開契約
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- symmetric public contract with ErrResult.mapErr<F>
   mapErr<F>(_fn: (error: never) => F): OkResult<T>
   andThen<U, F>(fn: (value: T) => Result<U, F>): Result<U, F>
   match<U>(onOk: (value: T) => U, _onErr: (error: never) => U): U
   unwrapOr(_fallback: T): T
 }
 
-/** 失敗を表す。`error` を保持する。 */
+/** A failure. Holds `error`. */
 export interface ErrResult<E> {
   readonly isOk: false
   readonly isErr: true
   readonly error: E
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- OkResult.map<U> と対称の公開契約
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- symmetric public contract with OkResult.map<U>
   map<U>(_fn: (value: never) => U): ErrResult<E>
   mapErr<F>(fn: (error: E) => F): ErrResult<F>
   andThen<U, F>(_fn: (value: never) => Result<U, F>): ErrResult<E>
@@ -34,10 +34,10 @@ export interface ErrResult<E> {
   unwrapOr<T>(fallback: T): T
 }
 
-/** `OkResult<T>` または `ErrResult<E>`。 */
+/** Either `OkResult<T>` or `ErrResult<E>`. */
 export type Result<T, E> = OkResult<T> | ErrResult<E>
 
-/** `OkResult<T>` の実装。 */
+/** Implementation of `OkResult<T>`. */
 class OkResultImpl<T> implements OkResult<T> {
   readonly isOk = true as const
   readonly isErr = false as const
@@ -48,7 +48,7 @@ class OkResultImpl<T> implements OkResult<T> {
     return new OkResultImpl(fn(this.value))
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters, @typescript-eslint/no-unused-vars -- OkResult.mapErr は no-op
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters, @typescript-eslint/no-unused-vars -- OkResult.mapErr is a no-op
   mapErr<F>(_fn: (error: never) => F): OkResult<T> {
     return this
   }
@@ -57,25 +57,25 @@ class OkResultImpl<T> implements OkResult<T> {
     return fn(this.value)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- OkResult.match は常に onOk を呼ぶ
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- OkResult.match always calls onOk
   match<U>(onOk: (value: T) => U, _onErr: (error: never) => U): U {
     return onOk(this.value)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- OkResult.unwrapOr は常に value を返す
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- OkResult.unwrapOr always returns value
   unwrapOr(_fallback: T): T {
     return this.value
   }
 }
 
-/** `ErrResult<E>` の実装。 */
+/** Implementation of `ErrResult<E>`. */
 class ErrResultImpl<E> implements ErrResult<E> {
   readonly isOk = false as const
   readonly isErr = true as const
 
   constructor(readonly error: E) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters, @typescript-eslint/no-unused-vars -- ErrResult.map は no-op
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters, @typescript-eslint/no-unused-vars -- ErrResult.map is a no-op
   map<U>(_fn: (value: never) => U): ErrResult<E> {
     return this
   }
@@ -84,7 +84,7 @@ class ErrResultImpl<E> implements ErrResult<E> {
     return new ErrResultImpl(fn(this.error))
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- ErrResult.andThen は no-op
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- ErrResult.andThen is a no-op
   andThen<U, F>(_fn: (value: never) => Result<U, F>): ErrResult<E> {
     return this
   }
@@ -99,18 +99,18 @@ class ErrResultImpl<E> implements ErrResult<E> {
 }
 
 /**
- * 成功 `Result<T, never>` を生成する。
+ * Creates a success `Result<T, never>`.
  *
- * @param value - 成功値
+ * @param value - Success value
  */
 export function ok<T>(value: T): OkResult<T> {
   return new OkResultImpl(value)
 }
 
 /**
- * 失敗 `Result<never, E>` を生成する。
+ * Creates a failure `Result<never, E>`.
  *
- * @param error - エラー値
+ * @param error - Error value
  */
 export function err<E>(error: E): ErrResult<E> {
   return new ErrResultImpl(error)
@@ -121,7 +121,7 @@ export function err<E>(error: E): ErrResult<E> {
 // ---------------------------------------------------------------------------
 
 /**
- * `await` 可能で `map / mapErr / andThen` を連鎖できる `PromiseLike<Result<T, E>>`。
+ * A `PromiseLike<Result<T, E>>` that can be awaited and chained with `map` / `mapErr` / `andThen`.
  */
 export class ResultAsync<T, E> implements PromiseLike<Result<T, E>> {
   private readonly _promise: Promise<Result<T, E>>
@@ -130,7 +130,7 @@ export class ResultAsync<T, E> implements PromiseLike<Result<T, E>> {
     this._promise = promise
   }
 
-  // eslint-disable-next-line unicorn/no-thenable -- await 可能にするため意図的に PromiseLike を実装する
+  // eslint-disable-next-line unicorn/no-thenable -- intentionally implements PromiseLike so that it can be awaited
   then<TResult1 = Result<T, E>, TResult2 = never>(
     onfulfilled?:
       | ((value: Result<T, E>) => TResult1 | PromiseLike<TResult1>)
@@ -141,10 +141,10 @@ export class ResultAsync<T, E> implements PromiseLike<Result<T, E>> {
   }
 
   /**
-   * `Promise<T>` を `ResultAsync<T, E>` に包む。reject 時は `onError` で E に写像する。
+   * Wraps a `Promise<T>` in a `ResultAsync<T, E>`. A rejection is mapped to `E` with `onError`.
    *
-   * @param promise - 対象 Promise
-   * @param onError - エラー写像
+   * @param promise - Target promise
+   * @param onError - Error mapper
    */
   static fromPromise<T, E>(
     promise: Promise<T>,
@@ -159,18 +159,18 @@ export class ResultAsync<T, E> implements PromiseLike<Result<T, E>> {
   }
 
   /**
-   * 解決済み `Result<T, E>` を `ResultAsync<T, E>` に包む。
+   * Wraps a resolved `Result<T, E>` in a `ResultAsync<T, E>`.
    *
-   * @param result - 対象 Result
+   * @param result - Target result
    */
   static fromResult<T, E>(result: Result<T, E>): ResultAsync<T, E> {
     return new ResultAsync(Promise.resolve(result))
   }
 
   /**
-   * 成功値を変換する。
+   * Transforms the success value.
    *
-   * @param fn - 同期写像
+   * @param fn - Synchronous mapper
    */
   map<U>(fn: (value: T) => U): ResultAsync<U, E> {
     return new ResultAsync(
@@ -179,9 +179,9 @@ export class ResultAsync<T, E> implements PromiseLike<Result<T, E>> {
   }
 
   /**
-   * エラー値を変換する。
+   * Transforms the error value.
    *
-   * @param fn - 同期エラー写像
+   * @param fn - Synchronous error mapper
    */
   mapErr<F>(fn: (error: E) => F): ResultAsync<T, F> {
     return new ResultAsync(
@@ -190,9 +190,9 @@ export class ResultAsync<T, E> implements PromiseLike<Result<T, E>> {
   }
 
   /**
-   * 失敗しうる非同期処理を連鎖する。
+   * Chains a step that may fail.
    *
-   * @param fn - `ResultAsync<U, F>` または `Result<U, F>` を返す写像
+   * @param fn - Mapper returning a `ResultAsync<U, F>` or `Result<U, F>`
    */
   andThen<U, F>(
     fn: (value: T) => ResultAsync<U, F> | Result<U, F>
@@ -207,10 +207,10 @@ export class ResultAsync<T, E> implements PromiseLike<Result<T, E>> {
   }
 
   /**
-   * 成功 / 失敗でパターンマッチする。
+   * Pattern-matches on success / failure.
    *
-   * @param onOk - 成功値ハンドラ
-   * @param onErr - エラー値ハンドラ
+   * @param onOk - Success handler
+   * @param onErr - Error handler
    */
   async match<U>(
     onOk: (value: T) => U | Promise<U>,
@@ -221,9 +221,9 @@ export class ResultAsync<T, E> implements PromiseLike<Result<T, E>> {
   }
 
   /**
-   * 成功なら value、失敗なら fallback を返す。
+   * Returns the value on success, or `fallback` on failure.
    *
-   * @param fallback - フォールバック値
+   * @param fallback - Fallback value
    */
   async unwrapOr(fallback: T): Promise<T> {
     const r = await this._promise

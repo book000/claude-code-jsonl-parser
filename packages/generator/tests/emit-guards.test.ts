@@ -3,7 +3,7 @@ import { emitGuardFunction } from '../src/emit-guards'
 import { inferShape } from '../src/infer'
 
 describe('emitGuardFunction', () => {
-  it('required スカラーの検査を含むガード関数文字列を出す', () => {
+  it('emits a guard function source with checks for required scalars', () => {
     const shape = inferShape([
       { type: 'mode', mode: 'normal', sessionId: 's' },
       { type: 'mode', mode: 'plan', sessionId: 's2' },
@@ -14,7 +14,7 @@ describe('emitGuardFunction', () => {
     expect(out).toContain('isString(v.sessionId)')
   })
 
-  it('optional フィールドは検査に含めない', () => {
+  it('does not check optional fields', () => {
     const shape = inferShape([
       { type: 'last-prompt', leafUuid: 'u', sessionId: 's', lastPrompt: 'p' },
       { type: 'last-prompt', leafUuid: 'u2', sessionId: 's2' },
@@ -24,7 +24,7 @@ describe('emitGuardFunction', () => {
     expect(out).not.toContain('v.lastPrompt')
   })
 
-  it('number/boolean/null 併記を適切な検査に写像する', () => {
+  it('maps number / boolean / null combinations to the right checks', () => {
     const shape = inferShape([
       { type: 'bridge-session', bridgeSessionId: 'b', lastSequenceNum: 1, sessionId: 's' },
     ])
