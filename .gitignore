@@ -13,7 +13,7 @@ coverage/
 # OS
 .DS_Store
 
-# Local corpus (NEVER commit real JSONL corpora — see spec §6)
+# Local corpus (NEVER commit real JSONL corpora)
 /corpus/
 *.local.jsonl
 

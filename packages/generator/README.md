@@ -1,37 +1,38 @@
 # claude-code-jsonl-generator
 
-実際の Claude Code JSONL コーパスをスキャンし、`claude-code-jsonl-parser` の型定義・型ガードを生成する CLI / ライブラリ。
+A CLI and library that scans real Claude Code JSONL corpora and generates type definitions and type guards for `claude-code-jsonl-parser`.
 
 ## ✨ Features
 
-- **実コーパス駆動** — 手書きのスキーマではなく、実際の `.jsonl` ファイル群をスキャンしてフィールド形状を推論する
-- **型定義 + 型ガードの同時生成** — TypeScript の `interface` と、対応する実行時ガード関数を 1 回のスキャンで生成
-- **CLI 1 本で完結** — `--corpus` と `--out` を指定するだけ
-- **プログラムからの利用も可能** — スキャナ・推論エンジン・emitter を個別に import できる
+- **Corpus-driven**: infers field shapes by scanning real `.jsonl` files instead of relying on hand-written schemas
+- **Types and guards in one scan**: emits TypeScript `interface`s and the matching runtime guard functions from a single scan
+- **One CLI**: just pass `--corpus` and `--out`
+- **Programmatic use**: the scanner, the inference engine and the emitters can be imported individually
 
-## 📦 インストール
+## 📦 Installation
 
 ```bash
 npm install --save-dev claude-code-jsonl-generator
 ```
 
-## 🚀 CLI の使い方
+## 🚀 CLI usage
 
 ```bash
 npx claude-code-jsonl-generator --corpus /path/to/jsonl-corpus --out packages/parser/src/generated
 ```
 
-- `--corpus <dir>`: `.jsonl` ファイルを再帰的にスキャンする対象ディレクトリ
-- `--out <dir>`: 生成物 (`types.generated.ts` / `guards.generated.ts`) の出力先
+- `--corpus <dir>`: directory scanned recursively for `.jsonl` files
+- `--out <dir>`: output directory for `types.generated.ts` and `guards.generated.ts`
 
-実行すると標準エラー出力にスキャン件数のサマリー (総行数・検出した type 数・構文エラー行数) が表示される。
-content ブロックのガードなど、手動でキュレーションしている部分は上書きされない。
+Both options are required; without them the CLI prints a usage message and exits with code 2.
+On success it prints a summary to standard error (total lines, number of types found, number of malformed lines).
 
-生成物は必ずレビューしてからコミットすること。本リポジトリでは
-`scripts/check-generated-sync.mjs` で `claude-code-jsonl-parser` にコミット済みの
-生成物と再生成結果が一致しているかをローカルで手動確認できる (CI では実行しない)。
+The output file names differ from the hand-maintained `types.ts` / `guards.ts` in `claude-code-jsonl-parser`, so nothing there is overwritten.
+The emitted guards return a plain `boolean` and cover only the top-level required fields, while the parser's guards return a `GuardResult` and also cover content blocks.
+Treat the output as a reference: review it and merge differences into the parser's files intentionally.
+In this repository, `scripts/check-generated-sync.mjs` checks locally that the fields the generator infers from the fixture corpus are declared in the parser's `generated/types.ts` (it is not run in CI).
 
-## 📖 プログラムからの利用 (上級者向け)
+## 📖 Programmatic use (advanced)
 
 ```ts
 import { scanCorpus, inferShape, emitInterface, emitGuardFunction } from 'claude-code-jsonl-generator'
@@ -44,14 +45,15 @@ for (const [type, samples] of scan.samplesByType) {
 }
 ```
 
-| エクスポート | 用途 |
+| Export | Purpose |
 | --- | --- |
-| `scanCorpus(dir)` | ディレクトリを再帰的にスキャンし、`type` ごとのサンプルを収集 |
-| `inferShape(samples)` | サンプル群からフィールド形状 (`Shape`) を推論 |
-| `entrySchemas` / `knownTypeSchema` / `KNOWN_TYPES` | 既知 type の zod スキーマ (ビルド時検証用) |
-| `emitInterface(name, type, shape)` | 推論した形状から TypeScript `interface` のソースを生成 |
-| `emitGuardFunction(name, type, shape)` | 推論した形状から実行時ガード関数のソースを生成 |
+| `scanCorpus(dir, maxSamplesPerType?)` | Scans a directory recursively and collects samples per `type` (at most 5000 per type by default) |
+| `inferShape(samples, options?)` | Infers the field shapes (`Shape`) from a set of samples; `jsonKind(value)` returns the kind of one JSON value |
+| `entrySchemas` / `knownTypeSchema` / `KNOWN_TYPES` | zod schemas of the known types (used by the validator) |
+| `emitInterface(name, type, shape)` | Generates the source of a TypeScript `interface` from an inferred shape |
+| `emitGuardFunction(name, type, shape)` | Generates the source of a runtime guard function from an inferred shape |
+| `tsTypeOf(kinds, literals?)` / `pascalCase(type)` | Helpers used by the emitters: kinds to TypeScript type string, and type string to PascalCase |
 
-## 📑 ライセンス
+## 📑 License
 
-このプロジェクトは [MIT License](./LICENSE) の下で公開されている。
+This project is released under the [MIT License](./LICENSE).

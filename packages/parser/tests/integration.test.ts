@@ -6,8 +6,8 @@ import { KNOWN_TYPES } from '../src/generated/guards'
 
 const FIX = path.join(fileURLToPath(new URL('.', import.meta.url)), 'fixtures')
 
-describe('統合: fixture', () => {
-  it('all-known-types.jsonl は 19 行すべてを KnownEntry としてパースする', async () => {
+describe('integration: fixtures', () => {
+  it('parses all 19 lines of all-known-types.jsonl as KnownEntry', async () => {
     const r = await parseJsonlFile(path.join(FIX, 'all-known-types.jsonl'))
     expect(r.isOk).toBe(true)
     if (!r.isOk) return
@@ -19,7 +19,7 @@ describe('統合: fixture', () => {
     expect(r.value.every((l) => l._kind === 'known')).toBe(true)
   })
 
-  it('content-blocks.jsonl はハイブリッド正規化される', async () => {
+  it('normalizes content-blocks.jsonl in the hybrid way', async () => {
     const r = await parseJsonlFile(path.join(FIX, 'content-blocks.jsonl'))
     if (!r.isOk) throw new Error('unexpected err')
     const asst = r.value[0]
@@ -39,7 +39,7 @@ describe('統合: fixture', () => {
     expect((tr.content[3] as { _kind: string })._kind).toBe('unknown')
   })
 
-  it('edge-cases.jsonl は空行スキップ・未知 type・shape 不一致を正しく分類する', async () => {
+  it('classifies blank lines, unknown types and shape mismatches in edge-cases.jsonl correctly', async () => {
     const r = await parseJsonlFile(path.join(FIX, 'edge-cases.jsonl'))
     if (!r.isOk) throw new Error('unexpected err')
     expect(r.value).toHaveLength(3)
@@ -50,7 +50,7 @@ describe('統合: fixture', () => {
     if (r.value[2]._kind === 'unknown') expect(r.value[2].typeHint).toBe('mode')
   })
 
-  it('malformed.jsonl は不正行のみ LineParseError にして継続する', async () => {
+  it('turns only the bad lines of malformed.jsonl into LineParseError and continues', async () => {
     const r = await parseJsonlFile(path.join(FIX, 'malformed.jsonl'))
     if (!r.isOk) throw new Error('unexpected err')
     expect(r.value).toHaveLength(3)

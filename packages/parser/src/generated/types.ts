@@ -1,24 +1,23 @@
 /**
- * Claude Code JSONL の各エントリ型定義。
- * 形状の根拠は実サンプルコーパスの調査結果。
+ * Type definitions of the Claude Code JSONL entries.
  *
- * claude-code-jsonl-generator でコーパスから再生成できるが、
- * content-block guards / message shapes は手動でキュレーションしているため、
- * 生成結果をそのまま上書きするのではなく差分を確認して反映すること。
+ * This file is maintained by hand.
+ * claude-code-jsonl-generator emits `types.generated.ts` for a corpus; diff that output against this file and merge intentionally.
+ * Content blocks and message shapes are curated by hand, so never overwrite them wholesale.
  */
 
 // ---------------------------------------------------------------------------
-// 判別子タグ
+// Discriminator tag
 // ---------------------------------------------------------------------------
 
-/** parser が付与する内部判別子。`type` フィールドとは別。 */
+/** Internal discriminator added by the parser. Separate from the `type` field. */
 export type ParsedKind = 'known' | 'unknown' | 'error'
 
 // ---------------------------------------------------------------------------
-// 共通ベース (フルメタデータ系エントリが共有するフィールド)
+// Common base (fields shared by the full-metadata entries)
 // ---------------------------------------------------------------------------
 
-/** assistant / user / attachment / system が共有する必須メタデータ。 */
+/** Required metadata shared by assistant / user / attachment / system. */
 export interface EntryBase {
   cwd: string
   entrypoint: string
@@ -30,7 +29,7 @@ export interface EntryBase {
   userType: string
   uuid: string
   version: string
-  /** サイドチェーン/サブエージェント関連の任意フィールド群 (観測されたもの) */
+  /** Optional sidechain / sub-agent related fields (as observed) */
   agentId?: string
   agentName?: string
   teamName?: string
@@ -40,10 +39,10 @@ export interface EntryBase {
 }
 
 // ---------------------------------------------------------------------------
-// フルメタデータ系エントリ
+// Full-metadata entries
 // ---------------------------------------------------------------------------
 
-/** `type: "assistant"` — アシスタント応答 (Anthropic API メッセージを内包)。 */
+/** `type: "assistant"`: assistant response (wraps an Anthropic API message). */
 export interface AssistantEntry extends EntryBase {
   _kind: 'known'
   type: 'assistant'
@@ -59,14 +58,14 @@ export interface AssistantEntry extends EntryBase {
   attributionMcpTool?: string
 }
 
-/** `user.origin` — 発生元の種別と付随情報。 */
+/** `user.origin`: kind of origin and accompanying information. */
 export interface UserOrigin {
   kind: string
   from?: string
   senderTaskId?: string
 }
 
-/** `type: "user"` — ユーザ入力 / ツール結果を内包。 */
+/** `type: "user"`: wraps user input / tool results. */
 export interface UserEntry extends EntryBase {
   _kind: 'known'
   type: 'user'
@@ -89,14 +88,14 @@ export interface UserEntry extends EntryBase {
   toolEndsTurn?: boolean
 }
 
-/** `type: "attachment"` — 添付データ。 */
+/** `type: "attachment"`: attached data. */
 export interface AttachmentEntry extends EntryBase {
   _kind: 'known'
   type: 'attachment'
   attachment: Record<string, unknown>
 }
 
-/** `type: "system"` — システムイベント (subtype で細分化)。 */
+/** `type: "system"`: system event (refined by `subtype`). */
 export interface SystemEntry extends EntryBase {
   _kind: 'known'
   type: 'system'
@@ -125,7 +124,7 @@ export interface SystemEntry extends EntryBase {
 }
 
 // ---------------------------------------------------------------------------
-// sessionId ベースの軽量エントリ
+// Lightweight entries keyed by sessionId
 // ---------------------------------------------------------------------------
 
 /** `type: "mode"`。 */
@@ -160,7 +159,7 @@ export interface AgentNameEntry {
   sessionId: string
 }
 
-/** `type: "agent-setting"` — `agentSetting` は文字列。 */
+/** `type: "agent-setting"`: `agentSetting` is a string. */
 export interface AgentSettingEntry {
   _kind: 'known'
   type: 'agent-setting'
@@ -176,7 +175,7 @@ export interface RelocatedEntry {
   sessionId: string
 }
 
-/** `type: "last-prompt"` — `lastPrompt` は任意。 */
+/** `type: "last-prompt"`: `lastPrompt` is optional. */
 export interface LastPromptEntry {
   _kind: 'known'
   type: 'last-prompt'
@@ -185,7 +184,7 @@ export interface LastPromptEntry {
   lastPrompt?: string
 }
 
-/** `type: "worktree-state"` — `worktreeSession` は object または null。 */
+/** `type: "worktree-state"`: `worktreeSession` is an object or null. */
 export interface WorktreeStateEntry {
   _kind: 'known'
   type: 'worktree-state'
@@ -202,7 +201,7 @@ export interface BridgeSessionEntry {
   sessionId: string
 }
 
-/** `type: "queue-operation"` — `content` は任意。 */
+/** `type: "queue-operation"`: `content` is optional. */
 export interface QueueOperationEntry {
   _kind: 'known'
   type: 'queue-operation'
@@ -233,7 +232,7 @@ export interface FrameLinkEntry {
   timestamp: string
 }
 
-/** `type: "file-history-snapshot"` — sessionId を持たない。 */
+/** `type: "file-history-snapshot"`: has no sessionId. */
 export interface FileHistorySnapshotEntry {
   _kind: 'known'
   type: 'file-history-snapshot'
@@ -242,7 +241,7 @@ export interface FileHistorySnapshotEntry {
   snapshot: Record<string, unknown>
 }
 
-/** `type: "started"` — workflow journal 由来。sessionId を持たない。 */
+/** `type: "started"`: comes from the workflow journal. Has no sessionId. */
 export interface StartedEntry {
   _kind: 'known'
   type: 'started'
@@ -250,7 +249,7 @@ export interface StartedEntry {
   agentId: string
 }
 
-/** `type: "result"` — workflow journal 由来。`result` は任意形状。 */
+/** `type: "result"`: comes from the workflow journal. `result` has an arbitrary shape. */
 export interface ResultEntry {
   _kind: 'known'
   type: 'result'
@@ -260,10 +259,10 @@ export interface ResultEntry {
 }
 
 // ---------------------------------------------------------------------------
-// KnownEntry union / フォールバック / ParsedLine
+// KnownEntry union / fallbacks / ParsedLine
 // ---------------------------------------------------------------------------
 
-/** 既知 type のエントリ全種。 */
+/** All entries of known types. */
 export type KnownEntry =
   | AssistantEntry
   | UserEntry
@@ -285,18 +284,18 @@ export type KnownEntry =
   | StartedEntry
   | ResultEntry
 
-/** type 不明、または既知 type だが shape 不一致だった行。生の JSON を保持。 */
+/** A line with an unknown type, or a known type whose shape did not match. Keeps the raw JSON. */
 export interface UnknownEntry {
   _kind: 'unknown'
   lineNumber: number
   raw: unknown
-  /** ガードが存在する既知 type だが shape 不一致だった場合の type 値。存在しない type なら undefined。 */
+  /** The type value when a guard exists for it but the shape did not match. `undefined` for an unknown type. */
   typeHint?: string
-  /** `typeHint` がある場合、どのフィールドが原因で shape 不一致になったかの診断メッセージ。 */
+  /** When `typeHint` is set, a diagnostic message naming the fields that caused the mismatch. */
   reason?: string
 }
 
-/** JSON 構文エラー行。 */
+/** A line with a JSON syntax error. */
 export interface LineParseError {
   _kind: 'error'
   lineNumber: number
@@ -304,11 +303,11 @@ export interface LineParseError {
   message: string
 }
 
-/** パース結果 1 行分。 */
+/** Parse result of one line. */
 export type ParsedLine = KnownEntry | UnknownEntry | LineParseError
 
 // ---------------------------------------------------------------------------
-// content ブロック (assistant / user メッセージ内)
+// Content blocks (inside assistant / user messages)
 // ---------------------------------------------------------------------------
 
 /** `{ type: "text", text }`。 */
@@ -336,7 +335,7 @@ export interface ToolUseBlock {
   caller?: unknown
 }
 
-/** tool_result 内 `{ type: "image", source }`。 */
+/** `{ type: "image", source }` inside a tool_result. */
 export interface ImageBlock {
   _kind: 'known'
   type: 'image'
@@ -347,14 +346,14 @@ export interface ImageBlock {
   }
 }
 
-/** tool_result 内 `{ type: "tool_reference", tool_name }`。 */
+/** `{ type: "tool_reference", tool_name }` inside a tool_result. */
 export interface ToolReferenceBlock {
   _kind: 'known'
   type: 'tool_reference'
   tool_name: string
 }
 
-/** tool_result の content 配列要素 union。 */
+/** Union of the elements of a tool_result content array. */
 export type ToolResultContentBlock =
   | TextBlock
   | ImageBlock
@@ -371,31 +370,31 @@ export interface ToolResultBlock {
 }
 
 /**
- * content ブロックがどの既知形状にも一致しなかった場合の部分フォールバック。
- * `_kind` は既知ブロック側と同じ判別子で、まずこれを見て `'unknown'` かどうかを
- * 判定すれば、既知ブロック側は安全に `.type` で絞り込める
- * (例: `if (block._kind === 'unknown') {...} else if (block.type === 'text') {...}`)。
+ * Partial fallback for a content block that matches no known shape.
+ * `_kind` is the same discriminator as on known blocks: check it for `'unknown'`
+ * first, and the known side can then be narrowed safely with `.type`
+ * (e.g. `if (block._kind === 'unknown') {...} else if (block.type === 'text') {...}`).
  */
 export interface UnknownContentBlock {
   _kind: 'unknown'
   raw: unknown
 }
 
-/** assistant `message.content[]` の要素 union。 */
+/** Union of the elements of assistant `message.content[]`. */
 export type AssistantContentBlock =
   | TextBlock
   | ThinkingBlock
   | ToolUseBlock
   | UnknownContentBlock
 
-/** user `message.content[]` の要素 union (content が配列のとき)。 */
+/** Union of the elements of user `message.content[]` (when content is an array). */
 export type UserContentBlock = TextBlock | ToolResultBlock | UnknownContentBlock
 
 // ---------------------------------------------------------------------------
-// message 本体
+// Message bodies
 // ---------------------------------------------------------------------------
 
-/** assistant の Anthropic API メッセージ。 */
+/** The Anthropic API message of an assistant entry. */
 export interface AssistantMessage {
   id: string
   type: string
@@ -411,7 +410,7 @@ export interface AssistantMessage {
   context_management?: unknown
 }
 
-/** user メッセージ。content は string または配列。 */
+/** User message. `content` is a string or an array. */
 export interface UserMessage {
   role: string
   content: string | UserContentBlock[]
