@@ -3,23 +3,23 @@ import { createReadStream } from 'node:fs'
 import { createInterface } from 'node:readline'
 import path from 'node:path'
 
-/** スキャン結果。 */
+/** Scan result. */
 export interface ScanResult {
-  /** type 文字列 → その type の生 JSON オブジェクト配列。 */
+  /** Type string to the raw JSON objects of that type. */
   samplesByType: Map<string, Record<string, unknown>[]>
-  /** 走査した有効行数 (パース成功)。 */
+  /** Number of lines scanned successfully (valid JSON). */
   totalLines: number
-  /** JSON 構文エラー行数。 */
+  /** Number of lines with a JSON syntax error. */
   malformedLines: number
-  /** type フィールドを持たない/文字列でない行数。 */
+  /** Number of valid-JSON lines that are not an object with a string `type`. */
   typelessLines: number
 }
 
 /**
- * `.jsonl` ファイルを再帰収集する。
+ * Recursively collects `.jsonl` files.
  *
- * @param dir - 起点ディレクトリ
- * @returns 絶対パス配列
+ * @param dir - Start directory
+ * @returns File paths (built by joining with `dir`)
  */
 async function collectJsonlFiles(dir: string): Promise<string[]> {
   const out: string[] = []
@@ -37,10 +37,10 @@ async function collectJsonlFiles(dir: string): Promise<string[]> {
 }
 
 /**
- * コーパスを走査し type ごとに生サンプルを集約する。
+ * Scans a corpus and groups the raw samples by type.
  *
- * @param corpusDir - コーパスのルートディレクトリ
- * @param maxSamplesPerType - type ごとの保持上限 (メモリ保護、既定 5000)
+ * @param corpusDir - Root directory of the corpus
+ * @param maxSamplesPerType - Per-type sample cap to bound memory (default 5000)
  */
 export async function scanCorpus(
   corpusDir: string,

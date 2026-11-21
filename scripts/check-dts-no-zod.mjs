@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * CI ガード: parser の dist/*.d.ts に zod 参照が漏れていないか検証する。
- * claude-code-jsonl-parser は依存ゼロ。zod を含む一切の外部ランタイム依存を持たない。
+ * Build guard: verifies that no zod reference leaks into the parser's dist/*.d.ts.
+ * claude-code-jsonl-parser is zero-dependency and has no external runtime dependency, zod included.
+ * Runs as the last step of the parser `build` script.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import nodePath from 'node:path'
@@ -11,10 +12,10 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const PARSER_DIST = nodePath.join(__dirname, '..', 'packages', 'parser', 'dist')
 
 /**
- * .d.ts / .d.cts を再帰収集する。
+ * Recursively collects .d.ts / .d.cts files.
  *
- * @param {string} directory - 探索対象
- * @returns {string[]} 絶対パス配列
+ * @param {string} directory - Directory to search
+ * @returns {string[]} File paths
  */
 function collectDts(directory) {
   /** @type {string[]} */
@@ -30,8 +31,8 @@ function collectDts(directory) {
   return results
 }
 
-// zod v4 は 'zod' 本体に加え 'zod/v4' 'zod/v3' 'zod/v4-mini' 等の subpath も
-// 公開しているため、bare specifier だけでなくそれらも検出対象にする。
+// zod v4 also exposes subpaths such as 'zod/v4', 'zod/v3' and 'zod/v4-mini',
+// so detect those as well as the bare specifier.
 const ZOD_PATTERNS = [
   /from\s+['"]zod(?:\/[^'"]*)?['"]/,
   /import\(['"]zod(?:\/[^'"]*)?['"]\)/,

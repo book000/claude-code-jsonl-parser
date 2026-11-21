@@ -20,7 +20,7 @@ afterAll(async () => {
 })
 
 describe('parseJsonlFile', () => {
-  it('正常ファイルを Ok(配列) で返す', async () => {
+  it('returns Ok(array) for a valid file', async () => {
     const r = await parseJsonlFile(goodPath)
     expect(r.isOk).toBe(true)
     if (!r.isOk) {
@@ -31,7 +31,7 @@ describe('parseJsonlFile', () => {
     expect(r.value[1]._kind).toBe('error')
   })
 
-  it('存在しないファイルは Err(FileReadError, ENOENT)', async () => {
+  it('returns Err(FileReadError, ENOENT) for a missing file', async () => {
     const r = await parseJsonlFile(path.join(dir, 'nope.jsonl'))
     expect(r.isErr).toBe(true)
     if (!r.isErr) {
@@ -44,18 +44,18 @@ describe('parseJsonlFile', () => {
 })
 
 describe('parseJsonlFileStream', () => {
-  it('行単位で逐次 yield する', async () => {
+  it('yields line by line', async () => {
     const out = []
-    // eslint-disable-next-line unicorn/prefer-array-from-async -- Array.fromAsync は ES2024 であり、lib ターゲット (ES2023) を変えないため
+    // eslint-disable-next-line unicorn/prefer-array-from-async -- Array.fromAsync is ES2024; avoid changing the lib target (ES2023)
     for await (const line of parseJsonlFileStream(goodPath)) out.push(line)
     expect(out).toHaveLength(3)
     expect(out[0]._kind).toBe('known')
   })
 
-  it('存在しないファイルは反復時に FileReadError を throw する', async () => {
+  it('throws a FileReadError during iteration for a missing file', async () => {
     await expect(async () => {
       const stream = parseJsonlFileStream(path.join(dir, 'nope.jsonl'))
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- 反復を発火させるだけ
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- only triggers the iteration
       for await (const _ of stream) {
         /* noop */
       }

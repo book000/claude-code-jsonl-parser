@@ -3,7 +3,7 @@ import { emitInterface, tsTypeOf } from '../src/emit-types'
 import { inferShape } from '../src/infer'
 
 describe('tsTypeOf', () => {
-  it('単一種別を TS 型に写像する', () => {
+  it('maps a single kind to a TS type', () => {
     expect(tsTypeOf(new Set(['string']))).toBe('string')
     expect(tsTypeOf(new Set(['number']))).toBe('number')
     expect(tsTypeOf(new Set(['boolean']))).toBe('boolean')
@@ -11,20 +11,20 @@ describe('tsTypeOf', () => {
     expect(tsTypeOf(new Set(['array']))).toBe('unknown[]')
   })
 
-  it('null との union を書ける', () => {
+  it('can write a union with null', () => {
     expect(tsTypeOf(new Set(['object', 'null']))).toBe('Record<string, unknown> | null')
   })
 
-  it('文字列リテラル集合を開いた union で書く', () => {
+  it('writes a string literal set as an open union', () => {
     expect(tsTypeOf(new Set(['string']), new Set(['a', 'b']))).toBe("'a' | 'b' | (string & {})")
   })
 })
 
 describe('emitInterface', () => {
-  it('required/optional を反映した interface 文字列を出す', () => {
-    // maxLiterals: 0 で文字列リテラル収集を無効化し、
-    // このテストの本来の関心事 (required/optional の反映) だけを検証する。
-    // リテラル union 化自体は tsTypeOf の別テストで検証済み。
+  it('emits an interface source reflecting required / optional', () => {
+    // maxLiterals: 0 disables string literal collection so that this test only
+    // verifies its own concern (reflecting required / optional).
+    // The literal union itself is covered by the separate tsTypeOf tests.
     const shape = inferShape(
       [
         { type: 'last-prompt', leafUuid: 'u', sessionId: 's', lastPrompt: 'p' },

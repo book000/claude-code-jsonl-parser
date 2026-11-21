@@ -6,7 +6,7 @@ export default defineConfig({
   platform: 'node',
   dts: true,
   clean: true,
-  // node platform は既定で index.mjs を出すため、index.js を保つよう false にする
+  // The node platform emits index.mjs by default; disable fixedExtension to keep index.js
   fixedExtension: false,
   outDir: 'dist',
 })

@@ -1,11 +1,7 @@
-/** JSON 値の種別。 */
+/** Kind of a JSON value. */
 export type JsonKind = 'string' | 'number' | 'boolean' | 'null' | 'array' | 'object'
 
-/**
- * JSON 値の種別を返す。
- *
- * @param v - 対象値
- */
+/** Returns the kind of a JSON value. */
 export function jsonKind(v: unknown): JsonKind {
   if (v === null) return 'null'
   if (Array.isArray(v)) return 'array'
@@ -13,38 +9,38 @@ export function jsonKind(v: unknown): JsonKind {
   return (['string', 'number', 'boolean'] as string[]).includes(t) ? (t as 'string' | 'number' | 'boolean') : 'object'
 }
 
-/** 1 フィールドの推論結果。 */
+/** Inference result for one field. */
 export interface FieldShape {
-  /** 全サンプルに存在したか。 */
+  /** Whether the field was present in every sample. */
   required: boolean
-  /** 観測された JSON 種別集合。 */
+  /** Set of observed JSON kinds. */
   kinds: Set<JsonKind>
-  /** 観測された文字列リテラル集合 (閾値以下のときのみ)。 */
+  /** Set of observed string literals (only when within the threshold). */
   literals?: Set<string>
 }
 
-/** 1 type (または content ブロック) の推論結果。 */
+/** Inference result for one type (or content block). */
 export interface Shape {
-  /** サンプル総数。 */
+  /** Total number of samples. */
   count: number
-  /** フィールド名 → 推論結果。 */
+  /** Field name to inference result. */
   fields: Map<string, FieldShape>
 }
 
-/** `InferOptions.maxLiterals` 省略時の既定値。 */
+/** Default for `InferOptions.maxLiterals`. */
 const DEFAULT_MAX_LITERALS = 20
 
-/** 推論オプション。 */
+/** Inference options. */
 export interface InferOptions {
-  /** 文字列リテラルを列挙として保持する上限。超えたら literals を破棄。既定は `DEFAULT_MAX_LITERALS`。 */
+  /** Maximum number of string literals kept as an enumeration; above it `literals` is dropped. Defaults to `DEFAULT_MAX_LITERALS`. */
   maxLiterals?: number
 }
 
 /**
- * 同一 type のサンプル群からフィールド形状を推論する。
+ * Infers the field shapes from samples of the same type.
  *
- * @param samples - 生 JSON オブジェクト配列
- * @param options - 推論オプション
+ * @param samples - Raw JSON objects
+ * @param options - Inference options
  */
 export function inferShape(
   samples: Record<string, unknown>[],
@@ -65,10 +61,10 @@ export function inferShape(
       kset.add(kind)
       kinds.set(key, kset)
 
-      // 文字列リテラル収集 (null は「破棄済み」マーカー)
+      // Collect string literals (null marks "dropped")
       const cur = literals.get(key)
       if (cur === null) {
-        // すでに破棄済み
+        // Already dropped
       } else if (kind === 'string') {
         const set = cur ?? new Set<string>()
         set.add(value as string)
@@ -81,7 +77,7 @@ export function inferShape(
   for (const [key, seen] of presence) {
     const lit = literals.get(key)
     const kindSet = kinds.get(key) ?? new Set<JsonKind>()
-    // 全て文字列だった場合のみ literals を採用する
+    // Use literals only when every observed value was a string
     const allString = kindSet.size === 1 && kindSet.has('string')
     fields.set(key, {
       required: seen === count,

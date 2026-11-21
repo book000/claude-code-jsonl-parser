@@ -1,10 +1,10 @@
 /**
- * Claude Code JSONL の各エントリ型に対する zod 非依存の純粋な型ガード。
- * トップレベル必須フィールドの最小検査のみ行う。
+ * Pure type guards (no zod) for each Claude Code JSONL entry type.
+ * Only the required top-level fields are checked, at a minimum.
  *
- * claude-code-jsonl-generator でコーパスから再生成できるが、
- * content-block guards は手動でキュレーションしているため、
- * 生成結果をそのまま上書きするのではなく差分を確認して反映すること。
+ * This file is maintained by hand.
+ * claude-code-jsonl-generator emits `guards.generated.ts` for a corpus; diff that output against this file and merge intentionally.
+ * The content-block guards are curated by hand, so never overwrite them wholesale.
  */
 import type {
   AssistantContentBlock, UserContentBlock, ToolResultBlock,
@@ -12,36 +12,33 @@ import type {
 } from './types'
 
 // ---------------------------------------------------------------------------
-// プリミティブ検査ヘルパ
+// Primitive check helpers
 // ---------------------------------------------------------------------------
 
-/** 配列でも null でもないプレーンオブジェクトかどうかを判定する。 */
+/** Whether the value is a plain object (neither an array nor null). */
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
-/** `string` かどうかを判定する。 */
 function isString(v: unknown): v is string {
   return typeof v === 'string'
 }
-/** `number` かどうかを判定する。 */
 function isNumber(v: unknown): v is number {
   return typeof v === 'number'
 }
-/** `boolean` かどうかを判定する。 */
 function isBoolean(v: unknown): v is boolean {
   return typeof v === 'boolean'
 }
 
 /**
- * ガード判定結果。`ok: false` の場合、`reason` に不一致だったフィールド名などの
- * 診断メッセージを含む (どこが shape 不一致の原因かを consumer が把握できるように)。
+ * Result of a guard. When `ok` is false, `reason` holds a diagnostic message such
+ * as the names of the mismatching fields, so consumers can see what caused the mismatch.
  */
 export interface GuardResult {
   ok: boolean
   reason?: string
 }
 
-/** `[フィールド名, 検査結果]` の配列から、不一致だったフィールド名をまとめた診断メッセージを作る。 */
+/** Builds a diagnostic message listing the failing field names from `[field name, check result]` pairs. Returns undefined when all pass. */
 function fieldCheck(fields: [string, boolean][]): string | undefined {
   const failing = fields.filter(([, ok]) => !ok).map(([name]) => name)
   return failing.length > 0
@@ -49,7 +46,7 @@ function fieldCheck(fields: [string, boolean][]): string | undefined {
     : undefined
 }
 
-/** フルメタデータ系の共通必須フィールドを検査し、不一致理由を返す (一致なら undefined)。 */
+/** Checks the required fields common to the full-metadata entries and returns the reason on mismatch (undefined on match). */
 function entryBaseReason(o: Record<string, unknown>): string | undefined {
   return fieldCheck([
     ['cwd', isString(o.cwd)],
@@ -66,7 +63,7 @@ function entryBaseReason(o: Record<string, unknown>): string | undefined {
 }
 
 // ---------------------------------------------------------------------------
-// 個別ガード (raw: unknown を受け、GuardResult を返す)
+// Individual guards (take a raw unknown, return a GuardResult)
 // ---------------------------------------------------------------------------
 
 function isAssistant(v: unknown): GuardResult {
@@ -253,10 +250,10 @@ function isResult(v: unknown): GuardResult {
 }
 
 // ---------------------------------------------------------------------------
-// レジストリ
+// Registry
 // ---------------------------------------------------------------------------
 
-/** type 文字列 → ガード関数のマップ。 */
+/** Map from type string to guard function. */
 export const guards = {
   assistant: isAssistant,
   user: isUser,
@@ -279,16 +276,16 @@ export const guards = {
   result: isResult,
 } as const satisfies Record<string, (v: unknown) => GuardResult>
 
-/** 既知 type 名の配列。 */
+/** Names of the known types. */
 export const KNOWN_TYPES = Object.keys(guards) as (keyof typeof guards)[]
 
 /**
- * 指定 type のガードを適用する。ガードが存在しない type なら undefined。
- * 一致すれば `{ ok: true }`、不一致なら `{ ok: false, reason }` (reason に
- * 診断メッセージ、どのフィールドが原因で shape 不一致になったかを含む)。
+ * Applies the guard of the given type, or returns undefined if no guard exists for it.
+ * Returns `{ ok: true }` on a match and `{ ok: false, reason }` on a mismatch, where
+ * `reason` names the fields that caused it.
  *
- * @param type - 判別子
- * @param v - 検査対象の生 JSON
+ * @param type - Discriminator
+ * @param v - Raw JSON to check
  */
 export function guardByType(type: string, v: unknown): GuardResult | undefined {
   const g = (guards as Record<string, (x: unknown) => GuardResult>)[type]
@@ -297,7 +294,7 @@ export function guardByType(type: string, v: unknown): GuardResult | undefined {
 }
 
 // ---------------------------------------------------------------------------
-// content ブロックガード
+// Content-block guards
 // ---------------------------------------------------------------------------
 
 function unknownBlock(raw: unknown): UnknownContentBlock {
@@ -324,7 +321,7 @@ function isToolReferenceBlock(v: Record<string, unknown>): boolean {
   return v.type === 'tool_reference' && isString(v.tool_name)
 }
 
-/** tool_result の inner content 配列を正規化する。 */
+/** Normalizes the inner content of a tool_result. */
 function normalizeToolResultContent(
   content: unknown
 ): string | ToolResultContentBlock[] {
@@ -339,7 +336,7 @@ function normalizeToolResultContent(
   })
 }
 
-/** tool_result ブロック全体を検査・正規化する。 */
+/** Checks and normalizes a whole tool_result block. */
 function normalizeToolResultBlock(v: Record<string, unknown>): UserContentBlock {
   if (v.type !== 'tool_result' || !isString(v.tool_use_id)) return unknownBlock(v)
   const block: ToolResultBlock = {
@@ -353,10 +350,11 @@ function normalizeToolResultBlock(v: Record<string, unknown>): UserContentBlock 
 }
 
 /**
- * assistant の message.content 配列を正規化する。
- * 既知ブロックはそのまま、未知は UnknownContentBlock に降格する。
+ * Normalizes the message.content of an assistant entry.
+ * Known blocks are kept as is; unknown ones are demoted to `UnknownContentBlock`.
+ * A non-array value becomes a single `UnknownContentBlock`.
  *
- * @param content - 生の content 配列
+ * @param content - Raw content
  */
 export function normalizeAssistantContent(
   content: unknown
@@ -372,9 +370,10 @@ export function normalizeAssistantContent(
 }
 
 /**
- * user の message.content を正規化する。string ならそのまま、配列なら要素ごとに正規化。
+ * Normalizes the message.content of a user entry. A string is returned as is and an array is normalized per element.
+ * Any other value becomes a single `UnknownContentBlock`.
  *
- * @param content - 生の content (string または配列)
+ * @param content - Raw content (string or array)
  */
 export function normalizeUserContent(
   content: unknown

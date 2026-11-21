@@ -4,30 +4,30 @@ import {
   normalizeAssistantContent, normalizeUserContent,
 } from '../src/generated/guards'
 
-describe('generated/guards — トップレベル', () => {
-  it('KNOWN_TYPES は 19 種を含む', () => {
+describe('generated/guards - top level', () => {
+  it('KNOWN_TYPES contains 19 types', () => {
     expect(KNOWN_TYPES).toHaveLength(19)
     expect(KNOWN_TYPES).toContain('assistant')
     expect(KNOWN_TYPES).toContain('result')
   })
 
-  it('mode の正しい行を通す', () => {
+  it('accepts a valid mode line', () => {
     expect(guards.mode({ type: 'mode', mode: 'normal', sessionId: 's' })).toEqual({ ok: true })
   })
 
-  it('mode で必須フィールド欠落を弾き、理由を返す', () => {
+  it('rejects a mode line with a missing required field and returns the reason', () => {
     expect(guards.mode({ type: 'mode', sessionId: 's' }).ok).toBe(false)
     expect(guards.mode({ type: 'mode', sessionId: 's' }).reason).toContain('mode')
     expect(guards.mode({ type: 'mode', mode: 123, sessionId: 's' }).ok).toBe(false)
   })
 
-  it('pr-link は prNumber が number であることを要求する', () => {
+  it('pr-link requires prNumber to be a number', () => {
     const base = { type: 'pr-link', prRepository: 'r', prUrl: 'u', sessionId: 's', timestamp: 't' }
     expect(guardByType('pr-link', { ...base, prNumber: 42 })).toEqual({ ok: true })
     expect(guardByType('pr-link', { ...base, prNumber: '42' })?.ok).toBe(false)
   })
 
-  it('assistant は message object と必須メタを要求する', () => {
+  it('assistant requires a message object and the required metadata', () => {
     const ok = {
       type: 'assistant', cwd: '/x', entrypoint: 'cli', gitBranch: 'm',
       isSidechain: false, parentUuid: null, sessionId: 's', timestamp: 't',
@@ -40,7 +40,7 @@ describe('generated/guards — トップレベル', () => {
     expect(guardByType('assistant', { ...ok, uuid: undefined })?.reason).toContain('uuid')
   })
 
-  it('assistant は message.role / id / model が欠落した行を弾く', () => {
+  it('assistant rejects a line missing message.role / id / model', () => {
     const base = {
       type: 'assistant', cwd: '/x', entrypoint: 'cli', gitBranch: 'm',
       isSidechain: false, parentUuid: null, sessionId: 's', timestamp: 't',
@@ -66,7 +66,7 @@ describe('generated/guards — トップレベル', () => {
     ).toBe(false)
   })
 
-  it('user は message.role を要求する', () => {
+  it('user requires message.role', () => {
     const base = {
       type: 'user', cwd: '/x', entrypoint: 'cli', gitBranch: 'm',
       isSidechain: false, parentUuid: null, sessionId: 's', timestamp: 't',
@@ -76,23 +76,23 @@ describe('generated/guards — トップレベル', () => {
     expect(guardByType('user', { ...base, message: { content: 'hi' } })?.ok).toBe(false)
   })
 
-  it('started は sessionId 無しでも通る (workflow journal)', () => {
+  it('started passes without a sessionId (workflow journal)', () => {
     expect(guardByType('started', { type: 'started', key: 'k', agentId: 'a' })).toEqual({ ok: true })
   })
 
-  it('未知 type は guardByType が undefined を返す', () => {
+  it('guardByType returns undefined for an unknown type', () => {
     expect(guardByType('no-such-type', {})).toBeUndefined()
   })
 })
 
-describe('generated/guards — content ブロック (ハイブリッド)', () => {
-  it('assistant content の既知ブロックはそのまま、未知は UnknownContentBlock に降格', () => {
+describe('generated/guards - content blocks (hybrid)', () => {
+  it('assistant content keeps known blocks and demotes unknown ones to UnknownContentBlock', () => {
     const out = normalizeAssistantContent([
       { type: 'text', text: 'hi' },
       { type: 'thinking', thinking: 'x', signature: 's' },
       { type: 'tool_use', id: 'i', name: 'n', input: {} },
       { type: 'bogus', foo: 1 },
-      { type: 'text' }, // text 欠落 → 降格
+      { type: 'text' }, // text missing: demoted
     ])
     expect(out[0]).toEqual({ _kind: 'known', type: 'text', text: 'hi' })
     expect((out[1] as { type: string }).type).toBe('thinking')
@@ -101,11 +101,11 @@ describe('generated/guards — content ブロック (ハイブリッド)', () =>
     expect(out[4]).toEqual({ _kind: 'unknown', raw: { type: 'text' } })
   })
 
-  it('user content が文字列ならそのまま返す', () => {
+  it('returns user content as is when it is a string', () => {
     expect(normalizeUserContent('plain')).toBe('plain')
   })
 
-  it('user content の tool_result は内部ブロックも正規化する', () => {
+  it('normalizes the inner blocks of a user tool_result', () => {
     const out = normalizeUserContent([
       { type: 'text', text: 't' },
       {
@@ -124,14 +124,14 @@ describe('generated/guards — content ブロック (ハイブリッド)', () =>
     expect((tr.content[3] as { _kind: string })._kind).toBe('unknown')
   })
 
-  it('tool_result.content が文字列ならそのまま', () => {
+  it('keeps tool_result.content as is when it is a string', () => {
     const out = normalizeUserContent([
       { type: 'tool_result', tool_use_id: 'x', content: 'stringy', is_error: true },
     ]) as unknown[]
     expect((out[0] as { content: string }).content).toBe('stringy')
   })
 
-  it('assistant content が非配列 (null/object) なら UnknownContentBlock 1 件に降格する', () => {
+  it('demotes non-array assistant content (null / object) to a single UnknownContentBlock', () => {
     expect(normalizeAssistantContent(null)).toEqual([
       { _kind: 'unknown', raw: null },
     ])
@@ -140,7 +140,7 @@ describe('generated/guards — content ブロック (ハイブリッド)', () =>
     ])
   })
 
-  it('user content が非配列・非文字列 (null/object) なら UnknownContentBlock 1 件に降格する', () => {
+  it('demotes user content that is neither an array nor a string (null / object) to a single UnknownContentBlock', () => {
     expect(normalizeUserContent(null)).toEqual([
       { _kind: 'unknown', raw: null },
     ])

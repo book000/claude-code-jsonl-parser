@@ -1,21 +1,23 @@
 import type { JsonKind, Shape } from './infer'
 
-/** JS 識別子として安全な名前かどうかを判定する正規表現。 */
+/** Matches names that are safe to use as a JS identifier. */
 const IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/
 
-/** シングルクォート文字列リテラルとして安全になるよう `'` をエスケープする。 */
+/** Escapes `'` so the value is safe inside a single-quoted string literal. */
 function escapeSingleQuote(s: string): string {
   return s.replaceAll('\'', String.raw`\'`)
 }
 
-/** 単一種別の required フィールドに対する検査式を返す。 */
+/**
+ * Returns the check expression for a required field.
+ * A field without exactly one non-null kind (mixed kinds, or only `null`) gets only a presence check (`'name' in v`).
+ */
 function checkExpr(name: string, kinds: Set<JsonKind>): string | undefined {
   const access = `v.${IDENTIFIER_RE.test(name) ? name : `['${escapeSingleQuote(name)}']`}`
-  // object|null → isObject or null 許容
   const hasNull = kinds.has('null')
   const nonNull = [...kinds].filter((k) => k !== 'null')
   if (nonNull.length !== 1) {
-    // 複数種別が混在する場合は存在確認のみ (過剰厳格を避ける)
+    // Mixed kinds or only null: check presence only (avoid being overly strict)
     return `'${escapeSingleQuote(name)}' in v`
   }
   const kind = nonNull[0]
@@ -32,11 +34,7 @@ function checkExpr(name: string, kinds: Set<JsonKind>): string | undefined {
 }
 
 /**
- * 1 type のガード関数文字列を生成する。required フィールドのみ検査する。
- *
- * @param fnName - 関数名 (例 isMode)
- * @param type - 判別子
- * @param shape - 推論結果
+ * Generates the source of the guard function for one type. Only required fields are checked.
  */
 export function emitGuardFunction(
   fnName: string,

@@ -7,9 +7,10 @@ import { emitInterface, pascalCase } from './emit-types'
 import { emitGuardFunction } from './emit-guards'
 
 /**
- * 引数を解釈する。`--corpus <dir> --out <parser/src/generated>`。
+ * Parses the arguments: `--corpus <dir> --out <dir>`.
+ * Prints the usage and exits with code 2 when either is missing.
  *
- * @param argv - process.argv.slice(2)
+ * @param argv - `process.argv.slice(2)`
  */
 function parseArgs(argv: string[]): { corpus: string; out: string } {
   let corpus = ''

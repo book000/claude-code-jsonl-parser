@@ -1,41 +1,46 @@
 # claude-code-jsonl-validator
 
-実際の Claude Code JSONL コーパスを、`claude-code-jsonl-parser` が持つ既知スキーマに対して回帰検証する CLI / ライブラリ。
+A CLI and library that regression-checks real Claude Code JSONL corpora against the known schemas (the zod schemas exported by `claude-code-jsonl-generator`).
 
 ## ✨ Features
 
-- **リグレッション検出専用** — 既知スキーマから外れた行を検出し、集計付きで報告する
-- **CLI 1 本で完結** — コーパスのディレクトリを指定するだけ
-- **CI との統合を想定** — 検出時は非 0 の終了コードを返すため、そのまま CI のゲートに使える
-- **プログラムからの利用も可能** — 1 行分の検証・集計処理を個別に import できる
+- **Regression detection only**: finds lines that deviate from the known schemas and reports them with counts
+- **One CLI**: just pass the corpus directory
+- **Made for CI**: exits with a non-zero code when a regression is found, so it can gate CI as is
+- **Programmatic use**: validate one line and aggregate findings with separate imports
 
-## 📦 インストール
+## 📦 Installation
 
 ```bash
 npm install --save-dev claude-code-jsonl-validator
 ```
 
-## 🚀 CLI の使い方
+## 🚀 CLI usage
 
 ```bash
 npx claude-code-jsonl-validator /path/to/jsonl-corpus
 ```
 
-指定したディレクトリ以下の `.jsonl` ファイルを再帰的に読み込み、各行を検証する。
-JSON 構文エラーの行はパーサー側の責務のため無視される。
+Reads every `.jsonl` file under the given directory recursively and validates each line.
+Lines with a JSON syntax error are ignored, because they are the parser's concern.
+Running it without a directory prints a usage message and exits with code 2.
 
-- リグレッションが無い場合: `No regressions. All lines match known schemas.` を表示し、終了コード `0`
-- リグレッションがある場合: `type` ごとに検出件数・種別・代表例を表示し、終了コード `1`
+- No regressions: prints `No regressions. All lines match known schemas.` and exits with `0`
+- Regressions found: prints the number of findings, the kinds and up to 5 sample messages per `type`, then exits with `1`
+
+A finding has one of four kinds: `no-type` (not an object, or no string `type`), `unknown-type` (no schema for the type), `schema-mismatch` (a required field is missing or has the wrong type), and `unknown-field` (a top-level key the schema does not list).
 
 ```
-[assistant] 3 finding(s)
-  schema-mismatch: 3
-    - uuid: Required
+[mode] 2 finding(s)
+  schema-mismatch: 1
+  unknown-field: 1
+    - mode: Invalid input: expected string, received undefined
+    - unknown field "brandNewField" on type "mode"
 
 Regression detected. See findings above.
 ```
 
-## 📖 プログラムからの利用 (上級者向け)
+## 📖 Programmatic use (advanced)
 
 ```ts
 import { validateLine, aggregateReport, hasFindings } from 'claude-code-jsonl-validator'
@@ -43,16 +48,16 @@ import { validateLine, aggregateReport, hasFindings } from 'claude-code-jsonl-va
 const findings = validateLine(JSON.parse(rawLine))
 const report = aggregateReport(findings)
 if (hasFindings(report)) {
-  // type ごとの Finding[] が report に集約されている
+  // report groups the Finding[] by type
 }
 ```
 
-| エクスポート | 用途 |
+| Export | Purpose |
 | --- | --- |
-| `validateLine(obj)` | パース済み 1 行分のオブジェクトを検証し `Finding[]` を返す |
-| `aggregateReport(findings)` | `Finding[]` を `type` ごとに集約する |
-| `hasFindings(report)` | 集約結果に 1 件でも `Finding` があるかを判定する |
+| `validateLine(obj)` | Validates one parsed object and returns a `Finding[]` |
+| `aggregateReport(findings)` | Groups a `Finding[]` by `type` into a `Map` |
+| `hasFindings(report)` | Tells whether the aggregated report contains at least one `Finding` |
 
-## 📑 ライセンス
+## 📑 License
 
-このプロジェクトは [MIT License](./LICENSE) の下で公開されている。
+This project is released under the [MIT License](./LICENSE).
