@@ -16,7 +16,7 @@ describe('tsTypeOf', () => {
   })
 
   it('writes a string literal set as an open union', () => {
-    expect(tsTypeOf(new Set(['string']), new Set(['a', 'b']))).toBe("'a' | 'b' | (string & {})")
+    expect(tsTypeOf(new Set(['string']), new Set(['a', 'b']))).toBe('"a" | "b" | (string & {})')
   })
 })
 
@@ -33,7 +33,7 @@ describe('emitInterface', () => {
       { maxLiterals: 0 }
     )
     const out = emitInterface('LastPromptEntry', 'last-prompt', shape)
-    expect(out).toContain("type: 'last-prompt'")
+    expect(out).toContain('type: "last-prompt"')
     expect(out).toContain('leafUuid: string')
     expect(out).toContain('lastPrompt?: string')
     expect(out).toContain("_kind: 'known'")

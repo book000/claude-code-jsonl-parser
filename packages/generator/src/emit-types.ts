@@ -1,12 +1,5 @@
 import type { JsonKind, Shape } from './infer'
-
-/** Matches names that are safe to use as a JS identifier. */
-const IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/
-
-/** Escapes `'` so the value is safe inside a single-quoted string literal. */
-function escapeSingleQuote(s: string): string {
-  return s.replaceAll('\'', String.raw`\'`)
-}
+import { IDENTIFIER_RE, stringLiteral } from './source'
 
 /**
  * Maps the observed kinds (and an optional literal set) to a TypeScript type string.
@@ -26,7 +19,7 @@ export function tsTypeOf(kinds: Set<JsonKind>, literals?: Set<string>): string {
   }
   // With string literals, emit an open union (`'a' | 'b' | (string & {})`)
   if (literals && literals.size > 0 && kinds.has('string')) {
-    const lits = [...literals].toSorted((a, b) => a.localeCompare(b)).map((s) => `'${escapeSingleQuote(s)}'`)
+    const lits = [...literals].toSorted((a, b) => a.localeCompare(b)).map((s) => stringLiteral(s))
     parts.push(`${lits.join(' | ')} | (string & {})`)
   } else if (kinds.has('string')) {
     parts.push('string')
@@ -39,15 +32,17 @@ export function tsTypeOf(kinds: Set<JsonKind>, literals?: Set<string>): string {
 
 /** Returns the name as is if it is a safe identifier, otherwise quotes it. */
 function propKey(name: string): string {
-  return IDENTIFIER_RE.test(name) ? name : `'${escapeSingleQuote(name)}'`
+  return IDENTIFIER_RE.test(name) ? name : stringLiteral(name)
 }
 
 /** Converts a type string (split on `-` and `_`) to PascalCase for use as an interface name. */
 export function pascalCase(type: string): string {
-  return type
+  const name = type
     .split(/[-_]/)
     .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
     .join('')
+    .replaceAll(/[^A-Za-z0-9$]/gu, (c) => `$${c.codePointAt(0)?.toString(16)}$`)
+  return /^[0-9]/.test(name) ? `$${name}` : name
 }
 
 /**
@@ -62,10 +57,11 @@ export function emitInterface(
   type: string,
   shape: Shape
 ): string {
+  if (shape.fields.has('_kind')) throw new Error('Cannot generate an interface for a field named "_kind"')
   const lines: string[] = [
     `export interface ${interfaceName} {`,
     `  _kind: 'known'`,
-    `  type: '${escapeSingleQuote(type)}'`,
+    `  type: ${stringLiteral(type)}`,
   ]
   for (const [name, field] of shape.fields) {
     if (name === 'type') continue

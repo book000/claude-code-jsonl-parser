@@ -24,6 +24,8 @@ npx claude-code-jsonl-generator --corpus /path/to/jsonl-corpus --out packages/pa
 - `--corpus <dir>`: directory scanned recursively for `.jsonl` files
 - `--out <dir>`: output directory for `types.generated.ts` and `guards.generated.ts`
 
+The generator encodes unusual type names as TypeScript identifiers. It fails before writing output if two types produce the same identifier, a type conflicts with a guard helper, or a field is named `_kind`, which is reserved for generated interfaces.
+
 Both options are required; without them the CLI prints a usage message and exits with code 2.
 On success it prints a summary to standard error (total lines, number of types found, number of malformed lines).
 

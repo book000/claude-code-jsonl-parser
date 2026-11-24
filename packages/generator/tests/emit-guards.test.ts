@@ -9,7 +9,7 @@ describe('emitGuardFunction', () => {
       { type: 'mode', mode: 'plan', sessionId: 's2' },
     ])
     const out = emitGuardFunction('isMode', 'mode', shape)
-    expect(out).toContain("v.type === 'mode'")
+    expect(out).toContain('v.type === "mode"')
     expect(out).toContain('isString(v.mode)')
     expect(out).toContain('isString(v.sessionId)')
   })
