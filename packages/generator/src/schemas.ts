@@ -165,5 +165,7 @@ export const KNOWN_TYPES = Object.keys(entrySchemas)
  * @param type - Discriminator
  */
 export function knownTypeSchema(type: string): z.ZodType | undefined {
-  return (entrySchemas as Record<string, z.ZodType>)[type]
+  return Object.hasOwn(entrySchemas, type)
+    ? (entrySchemas as Record<string, z.ZodType>)[type]
+    : undefined
 }

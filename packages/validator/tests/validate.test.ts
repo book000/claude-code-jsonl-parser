@@ -15,6 +15,15 @@ describe('validateLine', () => {
     expect(f.some((x) => x.kind === 'unknown-type')).toBe(true)
   })
 
+  it.each(['__proto__', 'constructor', 'hasOwnProperty', 'toString'])(
+    'reports inherited property name %s as an unknown type',
+    (type) => {
+      expect(validateLine({ type })).toEqual([
+        { type, kind: 'unknown-type', message: `unknown type "${type}"` },
+      ])
+    }
+  )
+
   it('detects a missing required field', () => {
     const f = validateLine({ type: 'mode', sessionId: 's' })
     expect(f.some((x) => x.kind === 'schema-mismatch')).toBe(true)
