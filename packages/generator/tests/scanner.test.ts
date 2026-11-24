@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { mkdtemp, writeFile, mkdir, rm } from 'node:fs/promises'
+import { mkdtemp, writeFile, mkdir, rm, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { scanCorpus } from '../src/scanner'
@@ -33,4 +33,27 @@ describe('scanCorpus', () => {
     const result = await scanCorpus(dir)
     expect(result.samplesByType.has('future-type')).toBe(true)
   })
+})
+
+it('skips directory loops and links outside the corpus', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'gen-links-'))
+  try {
+    const corpus = path.join(root, 'corpus')
+    const outside = path.join(root, 'outside')
+    await mkdir(path.join(corpus, 'nested'), { recursive: true })
+    await mkdir(outside)
+    const external = path.join(outside, 'external.jsonl')
+    await writeFile(path.join(corpus, 'nested', 'valid.jsonl'), '{"type":"inside"}\n')
+    await writeFile(external, '{"type":"outside"}\n')
+    await symlink('.', path.join(corpus, 'loop'))
+    await symlink(outside, path.join(corpus, 'external'))
+    await symlink(external, path.join(corpus, 'linked.jsonl'))
+    await symlink('missing', path.join(corpus, 'broken.jsonl'))
+    const result = await scanCorpus(corpus)
+    expect(result.totalLines).toBe(1)
+    expect(result.samplesByType.size).toBe(1)
+    expect(result.samplesByType.has('inside')).toBe(true)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
 })

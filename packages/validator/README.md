@@ -21,7 +21,7 @@ npm install --save-dev claude-code-jsonl-validator
 npx claude-code-jsonl-validator /path/to/jsonl-corpus
 ```
 
-Reads every `.jsonl` file under the given directory recursively and validates each line.
+Reads `.jsonl` files under the given directory recursively and validates each line. Symlinks are skipped.
 Lines with a JSON syntax error are ignored, because they are the parser's concern.
 Running it without a directory prints a usage message and exits with code 2.
 

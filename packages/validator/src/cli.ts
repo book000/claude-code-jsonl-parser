@@ -1,22 +1,8 @@
 #!/usr/bin/env node
 import { createReadStream } from 'node:fs'
-import { readdir, stat } from 'node:fs/promises'
 import { createInterface } from 'node:readline'
-import path from 'node:path'
+import { collectJsonl } from './collect-jsonl'
 import { validateLine, aggregateReport, hasFindings, type Finding } from './validate'
-
-/** Recursively collects `.jsonl` files. */
-async function collectJsonl(dir: string): Promise<string[]> {
-  const out: string[] = []
-  const entries = await readdir(dir)
-  for (const entry of entries) {
-    const full = path.join(dir, entry)
-    const st = await stat(full)
-    if (st.isDirectory()) out.push(...(await collectJsonl(full)))
-    else if (entry.endsWith('.jsonl')) out.push(full)
-  }
-  return out
-}
 
 async function main(): Promise<void> {
   const corpus = process.argv[2]

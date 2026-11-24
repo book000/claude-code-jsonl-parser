@@ -21,7 +21,7 @@ npm install --save-dev claude-code-jsonl-generator
 npx claude-code-jsonl-generator --corpus /path/to/jsonl-corpus --out packages/parser/src/generated
 ```
 
-- `--corpus <dir>`: directory scanned recursively for `.jsonl` files
+- `--corpus <dir>`: directory scanned recursively for `.jsonl` files (symlinks are skipped)
 - `--out <dir>`: output directory for `types.generated.ts` and `guards.generated.ts`
 
 Both options are required; without them the CLI prints a usage message and exits with code 2.

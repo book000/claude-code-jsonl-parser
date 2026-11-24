@@ -10,6 +10,8 @@ It consists of three packages: a parser, a schema-generation CLI and a regressio
 - **Regression-check CLI**: validates a real corpus against the known schemas, so schema drift can be caught in CI
 - **ESM and CJS**: every package can be used from both Node.js module systems
 
+Corpus scans skip symlink entries when collecting files recursively.
+
 ## 📦 Packages
 
 | Package | Description |
