@@ -60,6 +60,7 @@ async function main(): Promise<void> {
     `\n\nexport const guards = {\n${registry.join('\n')}\n} as const satisfies Record<string, (v: unknown) => boolean>\n` +
     `export const KNOWN_TYPES = Object.keys(guards) as (keyof typeof guards)[]\n` +
     `export function guardByType(type: string, v: unknown): boolean | undefined {\n` +
+    `  if (!Object.hasOwn(guards, type)) return undefined\n` +
     `  const g = (guards as Record<string, (x: unknown) => boolean>)[type]\n` +
     `  return g === undefined ? undefined : g(v)\n}\n`
   const guardsOut = guardsHeader + guardBlocks.join('\n\n') + guardsRegistry

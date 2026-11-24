@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { parseLine } from '../src/parse-line'
+import { parseJsonl } from '../src/parse'
 
 describe('parseLine', () => {
   it('a JSON syntax error becomes a LineParseError', () => {
@@ -41,6 +42,17 @@ describe('parseLine', () => {
       expect(r.typeHint).toBeUndefined()
     }
   })
+
+  it.each(['__proto__', 'constructor', 'hasOwnProperty', 'toString'])(
+    'treats inherited property name %s as an unknown type',
+    (type) => {
+      const result = parseJsonl(JSON.stringify({ type }))
+      expect(result.isOk).toBe(true)
+      if (result.isOk) {
+        expect(result.value[0]).toMatchObject({ _kind: 'unknown', raw: { type } })
+      }
+    }
+  )
 
   it('an object without a type field is also an UnknownEntry (no typeHint)', () => {
     const r = parseLine(JSON.stringify({ foo: 1 }), 1)

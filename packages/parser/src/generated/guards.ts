@@ -288,6 +288,7 @@ export const KNOWN_TYPES = Object.keys(guards) as (keyof typeof guards)[]
  * @param v - Raw JSON to check
  */
 export function guardByType(type: string, v: unknown): GuardResult | undefined {
+  if (!Object.hasOwn(guards, type)) return undefined
   const g = (guards as Record<string, (x: unknown) => GuardResult>)[type]
   if (g === undefined) return undefined
   return g(v)
