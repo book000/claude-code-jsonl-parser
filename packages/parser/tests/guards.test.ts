@@ -32,7 +32,7 @@ describe('generated/guards - top level', () => {
       type: 'assistant', cwd: '/x', entrypoint: 'cli', gitBranch: 'm',
       isSidechain: false, parentUuid: null, sessionId: 's', timestamp: 't',
       userType: 'external', uuid: 'u', version: '1',
-      message: { role: 'assistant', content: [], id: 'msg_1', model: 'claude-x' },
+      message: { role: 'assistant', content: [], id: 'msg_1', model: 'claude-x', type: 'message', stop_reason: null, stop_sequence: null, stop_details: null, usage: {} },
     }
     expect(guardByType('assistant', ok)).toEqual({ ok: true })
     expect(guardByType('assistant', { ...ok, message: 'not-object' })?.ok).toBe(false)
@@ -129,6 +129,17 @@ describe('generated/guards - content blocks (hybrid)', () => {
       { type: 'tool_result', tool_use_id: 'x', content: 'stringy', is_error: true },
     ]) as unknown[]
     expect((out[0] as { content: string }).content).toBe('stringy')
+  })
+
+  it('demotes images with missing or invalid source type', () => {
+    const missing = { type: 'image', source: { media_type: 'image/png', data: 'a' } }
+    const invalid = { type: 'image', source: { type: 1, media_type: 'image/png', data: 'a' } }
+    const valid = { type: 'image', source: { type: 'base64', media_type: 'image/png', data: 'a' } }
+    expect(normalizeUserContent([{ type: 'tool_result', tool_use_id: 'x', content: [missing, invalid, valid] }])).toEqual([
+      { _kind: 'known', type: 'tool_result', tool_use_id: 'x', content: [
+        { _kind: 'unknown', raw: missing }, { _kind: 'unknown', raw: invalid }, { ...valid, _kind: 'known' },
+      ] },
+    ])
   })
 
   it('demotes non-array assistant content (null / object) to a single UnknownContentBlock', () => {

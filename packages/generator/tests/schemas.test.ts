@@ -22,7 +22,7 @@ describe('public zod schemas', () => {
     const ok = {
       type: 'assistant', cwd: '/x', entrypoint: 'cli', gitBranch: 'm',
       isSidechain: false, parentUuid: null, sessionId: 's', timestamp: 't',
-      userType: 'external', uuid: 'u', version: '1', message: { role: 'assistant', content: [] },
+      userType: 'external', uuid: 'u', version: '1', message: { role: 'assistant', id: 'm', model: 'c', type: 'message', stop_reason: null, stop_sequence: null, stop_details: null, usage: {}, content: [] },
     }
     expect(entrySchemas.assistant.safeParse(ok).success).toBe(true)
   })

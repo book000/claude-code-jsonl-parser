@@ -68,4 +68,31 @@ describe('parseLine', () => {
     expect(r.message.content[0]).toEqual({ _kind: 'known', type: 'text', text: 'hi' })
     expect((r.message.content[1] as { _kind: string })._kind).toBe('unknown')
   })
+
+  it('requires assistant message fields and preserves unknown content', () => {
+    const message: Record<string, unknown> = {
+      id: 'm', type: 'message', role: 'assistant', model: 'c',
+      stop_reason: null, stop_sequence: null, stop_details: null, usage: {},
+      content: [{ type: 'future' }],
+    }
+    const base = {
+      type: 'assistant', cwd: '/x', entrypoint: 'cli', gitBranch: 'm',
+      isSidechain: false, parentUuid: null, sessionId: 's', timestamp: 't',
+      userType: 'external', uuid: 'u', version: '1',
+    }
+    for (const field of ['id', 'type', 'role', 'model', 'stop_reason', 'stop_sequence', 'stop_details', 'usage']) {
+      const incomplete = Object.fromEntries(Object.entries(message).filter(([key]) => key !== field))
+      const result = parseLine(JSON.stringify({ ...base, message: incomplete }), 1)
+      expect(result._kind).toBe('unknown')
+      if (result._kind === 'unknown') expect(result.reason).toContain(`message.${field}`)
+    }
+    for (const field of ['type', 'stop_reason', 'stop_sequence']) {
+      expect(parseLine(JSON.stringify({ ...base, message: { ...message, [field]: 42 } }), 1)._kind).toBe('unknown')
+    }
+    const result = parseLine(JSON.stringify({ ...base, message }), 1)
+    expect(result._kind).toBe('known')
+    if (result._kind === 'known' && result.type === 'assistant') {
+      expect(result.message.content).toEqual([{ _kind: 'unknown', raw: { type: 'future' } }])
+    }
+  })
 })

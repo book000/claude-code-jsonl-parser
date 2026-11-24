@@ -19,7 +19,16 @@ const entryBase = {
 const assistant = z.object({
   ...entryBase,
   type: z.literal('assistant'),
-  message: z.object({}).loose(),
+  message: z.object({
+    role: z.string(),
+    id: z.string(),
+    model: z.string(),
+    type: z.string(),
+    stop_reason: z.string().nullable(),
+    stop_sequence: z.string().nullable(),
+    stop_details: z.unknown().refine((v) => v !== undefined),
+    usage: z.unknown().refine((v) => v !== undefined),
+  }).loose(),
   agentId: z.string().optional(),
   agentName: z.string().optional(),
   teamName: z.string().optional(),
@@ -39,7 +48,7 @@ const assistant = z.object({
 const user = z.object({
   ...entryBase,
   type: z.literal('user'),
-  message: z.object({}).loose(),
+  message: z.object({ role: z.string() }).loose(),
   agentId: z.string().optional(),
   agentName: z.string().optional(),
   teamName: z.string().optional(),

@@ -76,6 +76,11 @@ function isAssistant(v: unknown): GuardResult {
     ['message.role', isString(v.message.role)],
     ['message.id', isString(v.message.id)],
     ['message.model', isString(v.message.model)],
+    ['message.type', isString(v.message.type)],
+    ['message.stop_reason', v.message.stop_reason === null || isString(v.message.stop_reason)],
+    ['message.stop_sequence', v.message.stop_sequence === null || isString(v.message.stop_sequence)],
+    ['message.stop_details', 'stop_details' in v.message],
+    ['message.usage', 'usage' in v.message],
   ])
   return reason === undefined ? { ok: true } : { ok: false, reason }
 }
@@ -313,6 +318,7 @@ function isToolUseBlock(v: Record<string, unknown>): boolean {
 function isImageBlock(v: Record<string, unknown>): boolean {
   return (
     v.type === 'image' && isObject(v.source) &&
+    isString(v.source.type) &&
     isString((v.source as Record<string, unknown>).media_type) &&
     isString((v.source as Record<string, unknown>).data)
   )

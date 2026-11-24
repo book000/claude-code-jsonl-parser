@@ -25,6 +25,29 @@ describe('validateLine', () => {
     expect(f.some((x) => x.kind === 'schema-mismatch')).toBe(true)
   })
 
+  it('reports missing and invalid assistant message fields while tolerating unknown content', () => {
+    const message: Record<string, unknown> = {
+      id: 'm', type: 'message', role: 'assistant', model: 'c',
+      stop_reason: null, stop_sequence: null, stop_details: null, usage: {},
+      content: [{ type: 'future' }],
+    }
+    const base = {
+      type: 'assistant', cwd: '/x', entrypoint: 'cli', gitBranch: 'm',
+      isSidechain: false, parentUuid: null, sessionId: 's', timestamp: 't',
+      userType: 'external', uuid: 'u', version: '1',
+    }
+    expect(validateLine({ ...base, message })).toEqual([])
+    for (const field of ['id', 'type', 'role', 'model', 'stop_reason', 'stop_sequence', 'stop_details', 'usage']) {
+      const incomplete = Object.fromEntries(Object.entries(message).filter(([key]) => key !== field))
+      expect(validateLine({ ...base, message: incomplete })).toEqual(expect.arrayContaining([
+        expect.objectContaining({ kind: 'schema-mismatch', field: `message.${field}` }),
+      ]))
+    }
+    expect(validateLine({ ...base, message: { ...message, stop_reason: 42 } })).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'schema-mismatch', field: 'message.stop_reason' }),
+    ]))
+  })
+
   it('detects an unknown field (known type but a key outside the schema)', () => {
     const f = validateLine({ type: 'mode', mode: 'normal', sessionId: 's', brandNewField: 1 })
     expect(f.some((x) => x.kind === 'unknown-field' && x.field === 'brandNewField')).toBe(true)
