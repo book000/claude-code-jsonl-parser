@@ -22,3 +22,51 @@ jobs:
       # plugins, tsdown, typescript, etc.) as unused because it does not
       # understand pnpm workspace package boundaries.
       disabled-jobs: depcheck
+
+  artifacts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - name: Setup node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm -r build
+      - name: Verify dist contents
+        run: |
+          for pkg in parser generator validator; do
+            test -f "packages/$pkg/dist/index.js"
+            test -f "packages/$pkg/dist/index.d.ts"
+            test -f "packages/$pkg/dist/index.cjs"
+            test -f "packages/$pkg/dist/index.d.cts"
+          done
+          test -f packages/generator/dist/cli.js
+          test -f packages/validator/dist/cli.js
+      - name: Verify pack contents
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/pack-check
+          for name in claude-code-jsonl-parser claude-code-jsonl-generator claude-code-jsonl-validator; do
+            pnpm --filter "$name" pack --pack-destination /tmp/pack-check
+          done
+          for tarball in /tmp/pack-check/*.tgz; do
+            echo "Inspecting $tarball"
+            files=$(tar -tzf "$tarball")
+            echo "$files"
+            echo "$files" | grep -q '^package/dist/index.js$'
+            echo "$files" | grep -q '^package/dist/index.d.ts$'
+            echo "$files" | grep -q '^package/LICENSE$'
+            echo "$files" | grep -q '^package/README.md$'
+            if echo "$files" | grep -q 'tsbuildinfo'; then
+              exit 1
+            fi
+          done

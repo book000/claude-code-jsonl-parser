@@ -32,7 +32,7 @@ pnpm check:generated-sync     # local only, needs `pnpm -r build` first
 
 `pnpm fix` is defined (`pnpm -r fix && eslint . --fix`) but currently fails because no package defines a `fix` script; use `pnpm exec eslint . --fix` instead.
 
-CI (`.github/workflows/ci.yml`, reusable workflow from `book000/templates`) runs `pnpm run lint` and `pnpm run test`; depcheck is disabled. `release.yml` runs `pnpm -r build` and `semantic-release` on pushes to `develop` and `master`.
+CI (`.github/workflows/ci.yml`) runs lint and tests through the reusable workflow from `book000/templates`, builds all packages, and verifies distribution and packed artifacts; depcheck is disabled. `release.yml` runs `pnpm -r build` and `semantic-release` on pushes to `develop` and `master`.
 
 ## Structure
 
@@ -44,7 +44,7 @@ CI (`.github/workflows/ci.yml`, reusable workflow from `book000/templates`) runs
 
 ## Constraints
 
-- **Parser stays zero-dependency**: never import `zod` or any other runtime dependency under `packages/parser/src`. `scripts/check-dts-no-zod.mjs` runs as the last step of the parser `build` and fails if a `zod` reference leaks into `dist/*.d.ts` / `*.d.cts`. The PR CI job does not build the parser, so this check effectively runs in the Release workflow and in local builds.
+- **Parser stays zero-dependency**: never import `zod` or any other runtime dependency under `packages/parser/src`. `scripts/check-dts-no-zod.mjs` runs as the last step of the parser `build` and fails if a `zod` reference leaks into `dist/*.d.ts` / `*.d.cts`. This check runs in CI, the Release workflow, and local builds.
 - **`packages/parser/src/generated/` is hand-maintained**, despite the name. The generator writes `types.generated.ts` and `guards.generated.ts` to the directory given by `--out` and never touches `types.ts` / `guards.ts`. Those two files differ from generator output (for example guards return `GuardResult` with a `reason`, and content-block guards and message shapes are written by hand), so treat generator output as a reference to diff against and merge intentionally. The directory is excluded from ESLint.
 - `scripts/check-generated-sync.mjs` checks that every top-level field the generator infers from `packages/parser/tests/fixtures/all-known-types.jsonl` is declared in `generated/types.ts`. It is not part of CI; run it after touching schemas or entry types.
 - `packages/generator/src/schemas.ts` (zod) and `packages/parser/src/generated/guards.ts` describe the same entry types independently. Keep them in sync when adding or changing a type; the validator uses the zod side and the parser uses the guards.
