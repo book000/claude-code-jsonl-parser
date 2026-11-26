@@ -62,6 +62,9 @@ jobs:
             echo "$files" | grep -q '^package/README.md$'
             ! echo "$files" | grep -q 'tsbuildinfo'
           done
+      - name: Restore missing beta channel metadata
+        if: github.ref == 'refs/heads/develop'
+        run: bash scripts/restore-beta-note.sh
       - name: Release
         run: npx semantic-release
         env:
