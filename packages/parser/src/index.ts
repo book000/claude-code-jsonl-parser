@@ -1,5 +1,5 @@
 /**
- * claude-code-jsonl-parser — Claude Code の JSONL 会話ログを型安全にパースする。
+ * claude-code-jsonl-parser: type-safe parser for Claude Code JSONL conversation logs.
  *
  * @example
  * ```ts
@@ -16,7 +16,7 @@
  * ```
  */
 
-// パース API
+// Parse API
 export {
   parseJsonl,
   parseJsonlLines,
@@ -24,15 +24,15 @@ export {
   parseJsonlFileStream,
 } from './parse'
 
-// Result プリミティブ
+// Result primitives
 export { ok, err, ResultAsync } from './result'
 export type { Result, OkResult, ErrResult } from './result'
 
-// エラー型
+// Error type
 export { fileReadError } from './errors'
 export type { FileReadError } from './errors'
 
-// データモデル (生成物)
+// Data model
 export type {
   ParsedLine, ParsedKind, KnownEntry, UnknownEntry, LineParseError,
   EntryBase, AssistantEntry, UserEntry, AttachmentEntry, SystemEntry,
@@ -46,7 +46,7 @@ export type {
   ImageBlock, ToolReferenceBlock, UnknownContentBlock,
 } from './generated/types'
 
-// 型ガード (上級者向け: 独自パイプラインで再利用可能)
+// Type guards (advanced: reusable in custom pipelines)
 export {
   guards, guardByType, KNOWN_TYPES,
   normalizeAssistantContent, normalizeUserContent,

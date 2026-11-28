@@ -1,22 +1,17 @@
 import type { JsonKind, Shape } from './infer'
+import { IDENTIFIER_RE, stringLiteral } from './source'
 
-/** JS 識別子として安全な名前かどうかを判定する正規表現。 */
-const IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/
-
-/** シングルクォート文字列リテラルとして安全になるよう `'` をエスケープする。 */
-function escapeSingleQuote(s: string): string {
-  return s.replaceAll('\'', String.raw`\'`)
-}
-
-/** 単一種別の required フィールドに対する検査式を返す。 */
+/**
+ * Returns the check expression for a required field.
+ * A field without exactly one non-null kind (mixed kinds, or only `null`) gets only a presence check (`'name' in v`).
+ */
 function checkExpr(name: string, kinds: Set<JsonKind>): string | undefined {
-  const access = `v.${IDENTIFIER_RE.test(name) ? name : `['${escapeSingleQuote(name)}']`}`
-  // object|null → isObject or null 許容
+  const access = IDENTIFIER_RE.test(name) ? `v.${name}` : `v[${stringLiteral(name)}]`
   const hasNull = kinds.has('null')
   const nonNull = [...kinds].filter((k) => k !== 'null')
   if (nonNull.length !== 1) {
-    // 複数種別が混在する場合は存在確認のみ (過剰厳格を避ける)
-    return `'${escapeSingleQuote(name)}' in v`
+    // Mixed kinds or only null: check presence only (avoid being overly strict)
+    return `${stringLiteral(name)} in v`
   }
   const kind = nonNull[0]
   const base: Partial<Record<JsonKind, string>> = {
@@ -27,16 +22,12 @@ function checkExpr(name: string, kinds: Set<JsonKind>): string | undefined {
     array: `Array.isArray(${access})`,
   }
   const expr = base[kind]
-  if (expr === undefined) return `'${escapeSingleQuote(name)}' in v`
+  if (expr === undefined) return `${stringLiteral(name)} in v`
   return hasNull ? `(${access} === null || ${expr})` : expr
 }
 
 /**
- * 1 type のガード関数文字列を生成する。required フィールドのみ検査する。
- *
- * @param fnName - 関数名 (例 isMode)
- * @param type - 判別子
- * @param shape - 推論結果
+ * Generates the source of the guard function for one type. Only required fields are checked.
  */
 export function emitGuardFunction(
   fnName: string,
@@ -45,7 +36,7 @@ export function emitGuardFunction(
 ): string {
   const checks: string[] = [
     `isObject(v)`,
-    `v.type === '${escapeSingleQuote(type)}'`,
+    `v.type === ${stringLiteral(type)}`,
   ]
   for (const [name, field] of shape.fields) {
     if (name === 'type' || !field.required) continue

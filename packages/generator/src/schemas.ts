@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
-// 未知の追加フィールドを許容するため .loose() (passthrough 相当) にする。
-// validator は「未知フィールド出現」を別途検出するため、ここでは緩めに定義する。
+// Use .loose() (passthrough) to tolerate unknown extra fields.
+// The validator reports unknown fields separately, so these schemas stay lenient.
 
 const entryBase = {
   cwd: z.string(),
@@ -19,7 +19,16 @@ const entryBase = {
 const assistant = z.object({
   ...entryBase,
   type: z.literal('assistant'),
-  message: z.object({}).loose(),
+  message: z.object({
+    role: z.string(),
+    id: z.string(),
+    model: z.string(),
+    type: z.string(),
+    stop_reason: z.string().nullable(),
+    stop_sequence: z.string().nullable(),
+    stop_details: z.unknown().refine((v) => v !== undefined),
+    usage: z.unknown().refine((v) => v !== undefined),
+  }).loose(),
   agentId: z.string().optional(),
   agentName: z.string().optional(),
   teamName: z.string().optional(),
@@ -39,7 +48,7 @@ const assistant = z.object({
 const user = z.object({
   ...entryBase,
   type: z.literal('user'),
-  message: z.object({}).loose(),
+  message: z.object({ role: z.string() }).loose(),
   agentId: z.string().optional(),
   agentName: z.string().optional(),
   teamName: z.string().optional(),
@@ -131,14 +140,14 @@ const result = z.object({
   type: z.literal('result'),
   key: z.string(),
   agentId: z.string(),
-  // z.unknown() 単体だと result キー自体が欠落していても undefined として通ってしまう
-  // (parser 側の guard は `'result' in v` でキーの実在を要求するため、ここでも合わせる)。
+  // A bare z.unknown() accepts a missing `result` key as undefined.
+  // The parser guard requires the key via `'result' in v`, so require it here too.
   result: z.unknown().refine((v) => v !== undefined, {
-    message: 'result フィールドは必須です',
+    message: 'result field is required',
   }),
 })
 
-/** type 文字列 → 公開 zod スキーマ。 */
+/** Type string to the public zod schema. */
 export const entrySchemas = {
   assistant, user, attachment, system, mode,
   'permission-mode': permissionMode,
@@ -156,14 +165,16 @@ export const entrySchemas = {
   started, result,
 } as const
 
-/** 既知 type 名の配列。 */
+/** Names of the known types. */
 export const KNOWN_TYPES = Object.keys(entrySchemas)
 
 /**
- * 指定 type のスキーマを返す。未知なら undefined。
+ * Returns the schema of the given type, or `undefined` if unknown.
  *
- * @param type - 判別子
+ * @param type - Discriminator
  */
 export function knownTypeSchema(type: string): z.ZodType | undefined {
-  return (entrySchemas as Record<string, z.ZodType>)[type]
+  return Object.hasOwn(entrySchemas, type)
+    ? (entrySchemas as Record<string, z.ZodType>)[type]
+    : undefined
 }

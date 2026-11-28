@@ -1,22 +1,8 @@
 #!/usr/bin/env node
 import { createReadStream } from 'node:fs'
-import { readdir, stat } from 'node:fs/promises'
 import { createInterface } from 'node:readline'
-import path from 'node:path'
+import { collectJsonl } from './collect-jsonl'
 import { validateLine, aggregateReport, hasFindings, type Finding } from './validate'
-
-/** `.jsonl` を再帰収集する。 */
-async function collectJsonl(dir: string): Promise<string[]> {
-  const out: string[] = []
-  const entries = await readdir(dir)
-  for (const entry of entries) {
-    const full = path.join(dir, entry)
-    const st = await stat(full)
-    if (st.isDirectory()) out.push(...(await collectJsonl(full)))
-    else if (entry.endsWith('.jsonl')) out.push(full)
-  }
-  return out
-}
 
 async function main(): Promise<void> {
   const corpus = process.argv[2]
@@ -38,7 +24,7 @@ async function main(): Promise<void> {
       try {
         obj = JSON.parse(raw)
       } catch {
-        continue // 構文エラーは parser 側の責務。ここでは無視
+        continue // Syntax errors are the parser's concern; ignore them here
       }
       findings.push(...validateLine(obj))
     }
@@ -51,7 +37,7 @@ async function main(): Promise<void> {
     const byKind = new Map<string, number>()
     for (const f of bucket) byKind.set(f.kind, (byKind.get(f.kind) ?? 0) + 1)
     for (const [kind, n] of byKind) console.log(`  ${kind}: ${n}`)
-    // 代表例を数件表示
+    // Show a few representative messages
     for (const f of bucket.slice(0, 5)) console.log(`    - ${f.message}`)
   }
 

@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest'
 import type { ParsedLine, AssistantEntry } from '../src/generated/types'
 
 /**
- * `line` を `ParsedLine` (判別共用体) として受け取り narrowing する。
- * パラメータ経由で受けることで、呼び出し元のリテラル初期化値に基づく
- * 型の絞り込みを持ち込まず、実行時の narrowing を検証する。
+ * Takes `line` as a `ParsedLine` (discriminated union) and narrows it.
+ * Receiving it through a parameter avoids the type narrowing that the caller's
+ * literal initializer would bring, so the runtime narrowing is what gets verified.
  *
- * @param line - narrowing 対象
+ * @param line - Value to narrow
  */
 function expectAssistantRole(line: ParsedLine): void {
   if (line._kind === 'known' && line.type === 'assistant') {
@@ -17,7 +17,7 @@ function expectAssistantRole(line: ParsedLine): void {
 }
 
 describe('generated/types (discriminated union)', () => {
-  it('_kind と type で narrowing できる', () => {
+  it('can narrow by _kind and type', () => {
     const line: ParsedLine = {
       _kind: 'known',
       type: 'assistant',

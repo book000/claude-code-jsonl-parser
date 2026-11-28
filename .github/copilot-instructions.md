@@ -1,37 +1,20 @@
 # Copilot code review instructions
 
-TypeScript monorepo (pnpm workspaces) for parsing Claude Code JSONL logs. Three
-packages: `parser` (zero-dependency), `generator` (CLI, uses `zod`), `validator`
-(CLI, depends on generator + `zod`). ESM only; Node.js `>=24`.
+Read `AGENTS.md` first: it holds the language rule, the project structure and the constraints. Review against it.
 
-## What to prioritize in review
+## Language
 
-- **Parser zero-dependency rule**: flag any new runtime dependency added to
-  `packages/parser`, and any `import`/`require` of `zod` (or other runtime deps)
-  under `packages/parser/src`. The parser must have no runtime dependencies, and
-  `zod` must never leak into its emitted `.d.ts`.
-- **Error handling**: the parser must never throw on malformed input. Parsing
-  results are discriminated as `known` / `unknown` / `error`; flag code paths that
-  throw instead of returning an error result, or that assume a line is `known`
-  without checking `_kind`.
-- **Generated files**: `packages/parser/src/generated/{types.ts,guards.ts}` are
-  partially hand-curated (content-block guards and message shapes). Flag changes
-  that appear to be a blind full regeneration overwriting curated shapes.
-- **Type safety**: flag new uses of `any` or unchecked casts; prefer precise
-  types and the existing type guards.
+All deliverables (code comments, docstrings, documentation, commit messages, PR text) are English; runtime messages are English. Flag new non-English text unless it is a quotation, a technical identifier, a generated file, or external source text.
 
-## Conventions enforced by tooling
+## What to prioritize
 
-- Formatting is handled by Prettier (no semicolons, single quotes, `printWidth`
-  80). Do not raise style-only nits that the formatter already governs.
-- Linting is `@book000/eslint-config`; `dist/`, `coverage/`, and `generated/` are
-  excluded from ESLint.
-- Tests use Vitest and live in each package's `tests/` directory. Flag new public
-  behavior added without corresponding tests.
+- **Parser zero-dependency rule**: flag any runtime dependency added to `packages/parser` and any import of `zod` (or another runtime dependency) under `packages/parser/src`, and any change that makes a `zod` type appear in the parser's emitted `.d.ts`.
+- **Never throw on malformed input**: line parsing must return `known` / `unknown` / `error` results; flag code that throws on bad input or assumes a line is `known` without checking `_kind`.
+- **Generated directory**: `packages/parser/src/generated/` is hand-maintained; flag a blind overwrite with generator output. Flag changes to the entry types or guards that are not mirrored in `packages/generator/src/schemas.ts`.
+- **Type safety**: flag new `any` and unchecked casts; prefer precise types and the existing guards.
+- **Tests and docs**: flag new public behavior without tests, and API or command changes without a README update.
 
 ## Do not flag
 
-- Japanese-language code comments — this is the established project convention.
-- Absence of semicolons — intentional (Prettier config).
-- Commit-message language: commit descriptions are Japanese by convention, while
-  PR titles/bodies are required to be English (checked by CI).
+- Formatting that Prettier governs (no semicolons, single quotes, `printWidth` 80).
+- `dist/`, `coverage/` and `generated/` are excluded from ESLint by design.

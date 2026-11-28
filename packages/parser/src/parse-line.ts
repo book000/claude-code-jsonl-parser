@@ -4,15 +4,15 @@ import {
 } from './generated/guards'
 
 /**
- * JSONL 1 行を ParsedLine に変換する。
+ * Converts one JSONL line into a `ParsedLine`.
  *
- * - JSON 構文エラー: `LineParseError`
- * - 既知 type かつ shape 一致: `KnownEntry` (_kind='known' 付与、content 正規化)
- * - 既知 type だが shape 不一致: `UnknownEntry` (typeHint に type 値)
- * - 未知 type / type 無し: `UnknownEntry` (typeHint 無し)
+ * - JSON syntax error: `LineParseError`
+ * - Known type with a matching shape: `KnownEntry` (`_kind: 'known'` is added and content is normalized)
+ * - Known type with a mismatched shape: `UnknownEntry` (`typeHint` holds the type)
+ * - Unknown type or no type: `UnknownEntry` (no `typeHint`)
  *
- * @param rawLine - 1 行分の文字列 (改行を含まない)
- * @param lineNumber - 1 始まりの行番号
+ * @param rawLine - One line of text (without the line break)
+ * @param lineNumber - 1-based line number
  */
 export function parseLine(rawLine: string, lineNumber: number): ParsedLine {
   let parsed: unknown
@@ -27,7 +27,6 @@ export function parseLine(rawLine: string, lineNumber: number): ParsedLine {
     }
   }
 
-  // オブジェクトでない、または type が文字列でない場合は未知扱い
   if (
     typeof parsed !== 'object' ||
     parsed === null ||
@@ -42,15 +41,13 @@ export function parseLine(rawLine: string, lineNumber: number): ParsedLine {
   const matched = guardByType(type, obj)
 
   if (matched === undefined) {
-    // ガードが存在しない = 未知 type
     return { _kind: 'unknown', lineNumber, raw: parsed }
   }
   if (!matched.ok) {
-    // 既知 type だが shape 不一致
     return { _kind: 'unknown', lineNumber, raw: parsed, typeHint: type, reason: matched.reason }
   }
 
-  // shape 一致: _kind を付与し、content をハイブリッド正規化する
+  // Shape matches: add `_kind` and normalize content (known blocks kept, others demoted to `UnknownContentBlock`)
   const entry = { ...obj, _kind: 'known' } as unknown as KnownEntry
 
   if (entry.type === 'assistant') {
